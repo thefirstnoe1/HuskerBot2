@@ -9,8 +9,10 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.DefaultEspnService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.stereotype.Component
 import java.util.EnumSet
 
 @Configuration
@@ -18,11 +20,18 @@ class DiscordConfig {
 
     private final val log = LoggerFactory.getLogger(DefaultEspnService::class.java)
 
+
+    @Component
+    @ConfigurationProperties("discord.commands")
+    class CommandGuilds {
+        lateinit var guilds: List<String>
+    }
+
     @Bean
     fun getDiscordClient(
         @Value("\${discord.token}") token: String,
         slashCommands: Array<SlashCommand>,
-        commandListener: CommandListener
+        commandListener: CommandListener,
     ): JDA {
         val jda = JDABuilder.createLight(token, EnumSet.of(
                 GatewayIntent.MESSAGE_CONTENT,
@@ -35,15 +44,20 @@ class DiscordConfig {
             .addEventListeners(commandListener)
             .build()
 
-        val commands = jda.updateCommands()
-        commands.addCommands(
-            slashCommands.map {
-                Commands.slash(it.getCommandKey(), it.getDescription())
-                    .addOptions(it.getOptions())
-            }
-        )
-
-        commands.queue()
+        jda.awaitReady().guilds.forEach { guild ->
+            log.info("Registering slash commands for guild: ${guild.name}")
+            val commands = guild.updateCommands()
+            commands.addCommands(
+                slashCommands
+                    .filter({ command -> !command.isSubcommand()})
+                    .map {
+                        Commands.slash(it.getCommandKey(), it.getDescription())
+                            .addOptions(it.getOptions())
+                            .setDefaultPermissions(it.getPermissions())
+                            .addSubcommands(it.getSubcommandData())
+                    }
+            ).queue()
+        }
 
         return jda
     }

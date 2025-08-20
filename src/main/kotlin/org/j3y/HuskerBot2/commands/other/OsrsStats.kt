@@ -1,4 +1,4 @@
-package org.j3y.HuskerBot2.commands.impl
+package org.j3y.HuskerBot2.commands.other
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -40,7 +40,7 @@ class OsrsStats : SlashCommand() {
         try {
             response = client.getForObject(url, String::class.java) ?: ""
         } catch (hsce: HttpStatusCodeException) {
-            sendMessage(commandEvent.channel, "That player's high scores were not found.")
+            commandEvent.hook.sendMessage("That player's high scores were not found.")
             return
         }
 
