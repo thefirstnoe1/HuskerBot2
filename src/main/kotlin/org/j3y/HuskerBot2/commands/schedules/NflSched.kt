@@ -1,4 +1,4 @@
-package org.j3y.HuskerBot2.commands.impl
+package org.j3y.HuskerBot2.commands.schedules
 
 import com.fasterxml.jackson.databind.JsonNode
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -8,7 +8,6 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.EspnService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Component
@@ -45,13 +44,11 @@ class NflSched : SlashCommand() {
         OptionData(OptionType.INTEGER, "week-number", "The NFL week you would like the schedule for", false),
     )
 
-    @Transactional
-    @Synchronized
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
         commandEvent.deferReply().queue()
         val week = commandEvent.getOption("week-number")?.getAsInt() ?: getCurrentWeek()
         val apiJson: JsonNode = espnService.getNflScoreboard(week)
-        commandEvent.hook.sendMessage(espnService.buildEventString(apiJson)).queue()
+        commandEvent.hook.sendMessage(espnService.buildEventString(apiJson, "NFL Schedule for Week $week")).queue()
     }
 
     private fun getCurrentWeek(): Int {

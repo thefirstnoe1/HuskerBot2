@@ -13,5 +13,10 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+
 discord:
   token: ""
+  commands:
+    guilds:
+      - 1407527947761488085 # Husker Bot Test Discord
+      - 440632686185414677 # Huskers Main Discord
