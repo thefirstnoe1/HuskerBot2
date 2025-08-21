@@ -22,7 +22,8 @@ class CacheConfig {
             "nhlScoreboards",
             "teamData",
             "coordinates",
-            "weather-forecast"
+            "weather-forecast",
+            "cfb-matchup"
         )
         cacheManager.setCaffeine(
             Caffeine.newBuilder()

@@ -42,6 +42,11 @@ weather:
     coordinates-ttl: 86400
     forecast-ttl: 1800
 
+cfbd:
+  base-url: "https://api.collegefootballdata.com"
+  user-agent: "HuskerBot2 (huskerbot@example.com)"
+  cache:
+    matchup-ttl: 3600
 
 urban:
   base-url: "https://api.urbandictionary.com"
