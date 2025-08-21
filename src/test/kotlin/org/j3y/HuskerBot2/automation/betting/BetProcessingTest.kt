@@ -142,7 +142,7 @@ class BetProcessingTest {
         assertEquals(true, saved.didNebraskaBeatSpread)
         assertEquals("NEB -3", saved.spread)
         assertEquals(45.0, saved.overUnder)
-        assertTrue(saved.completed)
+        assertEquals(true, saved.completed)
 
         // Winner Nebraska, beat spread Nebraska, total 48>45 => Over
         assertEquals(true, bets[0].correctWinner)
@@ -204,7 +204,7 @@ class BetProcessingTest {
         assertEquals(true, saved.didNebraskaBeatSpread)
         assertEquals("IOWA -3", saved.spread)
         assertEquals(41.5, saved.overUnder)
-        assertTrue(saved.completed)
+        assertEquals(true, saved.completed)
 
         // Winner Nebraska, beat spread Nebraska, total 38 < 41.5 => Under
         assertEquals(true, bets[0].correctWinner)
