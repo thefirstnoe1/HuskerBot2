@@ -20,7 +20,9 @@ class CacheConfig {
             "cfbScoreboards",
             "nflScoreboards",
             "nhlScoreboards",
-            "teamData"
+            "teamData",
+            "coordinates",
+            "weather-forecast"
         )
         cacheManager.setCaffeine(
             Caffeine.newBuilder()
