@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import org.j3y.HuskerBot2.model.GeocodingResult
 import org.j3y.HuskerBot2.model.WeatherForecast
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -18,17 +19,16 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Service
-class WeatherService {
+class WeatherService(
+    @Value("\${weather.nominatim.base-url}") private val nominatimBaseUrl: String,
+    @Value("\${weather.nominatim.rate-limit-delay}") private val rateLimitDelayMs: Long,
+    @Value("\${weather.nws.base-url}") private val nwsBaseUrl: String,
+    @Value("\${weather.nws.user-agent}") private val userAgent: String
+) {
     
     private final val log = LoggerFactory.getLogger(WeatherService::class.java)
     private final val restTemplate = RestTemplate()
-    
-    companion object {
-        private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org"
-        private const val NWS_BASE_URL = "https://api.weather.gov"
-        private const val USER_AGENT = "HuskerBot2 (huskerbot@example.com)"
-        private val RATE_LIMIT_DELAY = Duration.ofSeconds(1)
-    }
+    private final val rateLimitDelay: Duration = Duration.ofMillis(rateLimitDelayMs)
     
     @Cacheable("coordinates", unless = "#result == null")
     fun getCoordinates(location: String): GeocodingResult? {
@@ -50,14 +50,14 @@ class WeatherService {
     
     private fun searchNominatim(location: String): GeocodingResult? {
         return try {
-            Thread.sleep(RATE_LIMIT_DELAY.toMillis())
+            Thread.sleep(rateLimitDelay.toMillis())
             
             val headers = HttpHeaders()
-            headers.set("User-Agent", USER_AGENT)
+            headers.set("User-Agent", userAgent)
             val entity = HttpEntity<String>(headers)
             
             val encodedLocation = URLEncoder.encode(location, StandardCharsets.UTF_8)
-            val url = "$NOMINATIM_BASE_URL/search?q=$encodedLocation&format=json&limit=1"
+            val url = "$nominatimBaseUrl/search?q=$encodedLocation&format=json&limit=1"
             
             val response = restTemplate.exchange(
                 url,
@@ -86,10 +86,10 @@ class WeatherService {
     private fun getNWSForecast(latitude: Double, longitude: Double): JsonNode? {
         return try {
             val headers = HttpHeaders()
-            headers.set("User-Agent", USER_AGENT)
+            headers.set("User-Agent", userAgent)
             val entity = HttpEntity<String>(headers)
             
-            val pointsUrl = "$NWS_BASE_URL/points/$latitude,$longitude"
+            val pointsUrl = "$nwsBaseUrl/points/$latitude,$longitude"
             val pointsResponse = restTemplate.exchange(
                 pointsUrl,
                 HttpMethod.GET,
