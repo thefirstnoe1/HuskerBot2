@@ -1,5 +1,6 @@
 package org.j3y.HuskerBot2.commands.mod
 
+import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.exceptions.PermissionException
@@ -8,6 +9,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.springframework.stereotype.Component
+import java.awt.Color
 
 @Component
 class Nebraska : SlashCommand() {
@@ -20,21 +22,25 @@ class Nebraska : SlashCommand() {
     override fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE)
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        commandEvent.deferReply(true).queue()
-
         val user = commandEvent.getOption("user")?.asMember
         if (user == null) { commandEvent.hook.sendMessage("Invalid user.").queue(); return }
 
         try {
             user.removeTimeout().queue(
                 {
-                    commandEvent.channel.sendMessage("${user.user.effectiveName} is welcome back to Nebraska.").queue()
-                    commandEvent.hook.deleteOriginal().queue()
+                    commandEvent.replyEmbeds(
+                        EmbedBuilder()
+                            .setTitle("Return to Nebraska")
+                            .setColor(Color.RED)
+                            .addField("Welcome Back!", "${user.effectiveName} is welcomed back to Nebraska!", false)
+                            .addField("Welcomed by", commandEvent.user.effectiveName, false)
+                            .build()
+                    ).queue()
                 },
-                { commandEvent.hook.sendMessage("Unable to remove ${user.user.effectiveName} from Iowa.").queue() }
+                { commandEvent.hook.sendMessage("Unable to remove ${user.user.effectiveName} from Iowa.").setEphemeral(true).queue() }
             )
         } catch(e: PermissionException) {
-            commandEvent.hook.sendMessage("You do not have permission to Nebraska ${user.user.effectiveName}.").queue()
+            commandEvent.reply("You do not have permission to Nebraska ${user.user.effectiveName}.").setEphemeral(true).queue()
         }
     }
 }

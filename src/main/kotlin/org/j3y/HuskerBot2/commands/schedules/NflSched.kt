@@ -38,17 +38,21 @@ class NflSched : SlashCommand() {
         LocalDateTime.parse("${YEAR}-12-24T00:00:00")
     )
 
-    override fun getCommandKey(): String = "nflsched"
+    override fun getCommandKey(): String = "nfl"
     override fun getDescription(): String = "Get the NFL schedules (or scores) for a given week"
+    override fun isSubcommand(): Boolean = true
+
     override fun getOptions(): List<OptionData> = listOf(
-        OptionData(OptionType.INTEGER, "week-number", "The NFL week you would like the schedule for", false),
+        OptionData(OptionType.INTEGER, "week", "The NFL week you would like the schedule for", false),
     )
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
         commandEvent.deferReply().queue()
-        val week = commandEvent.getOption("week-number")?.getAsInt() ?: getCurrentWeek()
+        val week = commandEvent.getOption("week")?.getAsInt() ?: getCurrentWeek()
+
         val apiJson: JsonNode = espnService.getNflScoreboard(week)
-        commandEvent.hook.sendMessage(espnService.buildEventString(apiJson, "NFL Schedule for Week $week")).queue()
+        val embeds = espnService.buildEventEmbed(apiJson)
+        commandEvent.hook.sendMessage("## \uD83C\uDFC8 \u200E NFL Schedule for Week $week").addEmbeds(embeds).queue()
     }
 
     private fun getCurrentWeek(): Int {

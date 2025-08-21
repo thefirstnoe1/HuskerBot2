@@ -24,9 +24,10 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
 	implementation("com.github.ben-manes.caffeine:caffeine")
-	
 	implementation("net.dv8tion:JDA:5.6.+")
+	implementation("org.apache.httpcomponents.client5:httpclient5:5.+")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	runtimeOnly("com.h2database:h2")
