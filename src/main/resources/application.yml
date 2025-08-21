@@ -50,6 +50,7 @@ weather:
 cfbd:
   base-url: "https://api.collegefootballdata.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
+  api-key: ""
   cache:
     matchup-ttl: 3600
 

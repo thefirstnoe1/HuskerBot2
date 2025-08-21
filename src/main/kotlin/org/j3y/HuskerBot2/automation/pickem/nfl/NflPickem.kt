@@ -25,8 +25,7 @@ import java.time.format.DateTimeFormatter
 
 @Component
 class NflPickem {
-    @Autowired
-    private lateinit var nflPickRepo: NflPickRepo
+    @Autowired private lateinit var nflPickRepo: NflPickRepo
     @Autowired lateinit var jda: JDA
     @Autowired lateinit var espnService: EspnService
     @Autowired lateinit var nflGameRepo: NflGameRepo
@@ -49,6 +48,15 @@ class NflPickem {
             log.warn("Did not find the nfl pickem channel with ID: {}", pickemChannelId)
             return
         }
+
+        // First, post results from previous week and current season leaderboard
+        try {
+            postPreviousWeekResults(channel)
+            postSeasonLeaderboard(channel)
+        } catch (e: Exception) {
+            log.error("Failed to post previous week results or leaderboard", e)
+        }
+
         try {
             val events = data.path("events")
             if (events.isEmpty) {
@@ -260,4 +268,80 @@ class NflPickem {
         nflPick.correctPick = nflPick.winningTeamId == nflGameEntity.winnerId
         nflPick.processed = true
     }
+
+    private fun postPreviousWeekResults(channel: TextChannel) {
+        val prevWeek = WeekResolver.currentNflWeek() - 1
+        val season = LocalDateTime.now().year
+        if (prevWeek <= 0) {
+            log.info("No previous week results to post (week {}))", prevWeek)
+            return
+        }
+
+        val picks = try { nflPickRepo.findBySeasonAndWeek(season, prevWeek) } catch (e: Exception) { emptyList() }
+        if (picks.isEmpty()) {
+            channel.sendMessage("No pick'em results for week $prevWeek.").queue()
+            return
+        }
+
+        val byUser = picks.groupBy { it.userId }
+        val userSummaries = byUser.map { (userId, userPicks) ->
+            val correct = userPicks.count { it.correctPick }
+            val total = userPicks.size
+            val points = correct * 10
+            Triple(userId, correct to total, points)
+        }.sortedWith(compareByDescending<Triple<Long, Pair<Int, Int>, Int>> { it.third }.thenBy { it.first })
+
+        val eb = EmbedBuilder()
+            .setColor(Color(0x1F, 0x8B, 0x4C))
+            .setTitle("NFL Pick'em — Week $prevWeek Results")
+            .setDescription("Each correct pick is worth 10 points.")
+
+        val sb = StringBuilder()
+        var rank = 1
+        userSummaries.forEach { (userId, correctTotal, points) ->
+            val (correct, total) = correctTotal
+            val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
+            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correct}/${total} correct)\n")
+            rank++
+        }
+        eb.addField("Leaderboard", sb.toString().ifBlank { "No results." }, false)
+
+        channel.sendMessageEmbeds(eb.build()).queue()
+    }
+
+    private fun postSeasonLeaderboard(channel: TextChannel) {
+        val season = LocalDateTime.now().year
+        val allPicks = try { nflPickRepo.findAll() } catch (e: Exception) { emptyList() }
+        val correctByUser = allPicks
+            .asSequence()
+            .filter { it.season == season && it.correctPick }
+            .groupBy { it.userId }
+            .mapValues { (_, picks) -> picks.size }
+
+        if (correctByUser.isEmpty()) {
+            channel.sendMessage("No season picks recorded yet for $season.").queue()
+            return
+        }
+
+        val leaderboard = correctByUser
+            .map { (userId, correctCount) -> Triple(userId, correctCount, correctCount * 10) }
+            .sortedWith(compareByDescending<Triple<Long, Int, Int>> { it.third }.thenBy { it.first })
+
+        val eb = EmbedBuilder()
+            .setColor(Color(0x00, 0x66, 0xCC))
+            .setTitle("NFL Pick'em — Season Leaderboard ($season)")
+            .setDescription("Points = 10 × correct picks so far this season.")
+
+        val sb = StringBuilder()
+        var rank = 1
+        leaderboard.forEach { (userId, correctCount, points) ->
+            val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
+            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correctCount} correct)\n")
+            rank++
+        }
+        eb.addField("Top Players", sb.toString(), false)
+
+        channel.sendMessageEmbeds(eb.build()).queue()
+    }
+
 }
