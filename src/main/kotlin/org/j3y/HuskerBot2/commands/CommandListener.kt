@@ -17,9 +17,6 @@ class CommandListener : ListenerAdapter() {
     @Autowired
     private lateinit var allCommands: List<SlashCommand>
 
-    @Autowired
-    private lateinit var urbanService: org.j3y.HuskerBot2.service.UrbanDictionaryService
-
     @PostConstruct
     fun init() {
         this.commands = allCommands.associateBy { it.getCommandKey() }
