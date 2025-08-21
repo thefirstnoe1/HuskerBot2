@@ -17,7 +17,7 @@ data class NflGameEntity(
     var dateTime: Instant = Instant.now(),
     var season: Int = 2025,
     var week: Int = 0,
-    var homeScore: Int = 0,
-    var awayScore: Int = 0,
-    var winner: String = "",
+    var homeScore: Int? = 0,
+    var awayScore: Int? = 0,
+    var winnerId: Long? = 0,
 )

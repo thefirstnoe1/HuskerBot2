@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.EspnService
+import org.j3y.HuskerBot2.util.WeekResolver
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -16,29 +17,6 @@ class CfbSched : SlashCommand() {
 
     @Autowired
     lateinit var espnService: EspnService
-
-    private final val YEAR = LocalDateTime.now().year
-
-    private val weeks: List<LocalDateTime> = listOf(
-        LocalDateTime.parse("${YEAR}-01-01T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-01T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-08T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-15T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-22T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-29T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-06T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-13T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-20T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-27T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-03T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-10T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-17T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-24T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-01T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-08T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-15T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-22T00:00:00")
-    )
 
     private val leagueMap: Map<String, Int> = mapOf(
         "top25" to 0,
@@ -88,7 +66,7 @@ class CfbSched : SlashCommand() {
             return
         }
 
-        val weekInt = commandEvent.getOption("week")?.asInt ?: getCurrentWeek()
+        val weekInt = commandEvent.getOption("week")?.asInt ?: WeekResolver.currentCfbWeek()
 
         if (weekInt < 1 || weekInt > 17) {
             commandEvent.hook.sendMessage("Week must be between 1 and 17 inclusive.").queue()
@@ -99,16 +77,5 @@ class CfbSched : SlashCommand() {
 
         val embeds = espnService.buildEventEmbed(apiJson)
         commandEvent.hook.sendMessage("## \uD83C\uDFC8 \u200E CFB Schedule for ${leagueLabelMap[leagueStr]} in Week $weekInt").addEmbeds(embeds).queue()
-    }
-
-    private fun getCurrentWeek(): Int {
-        val curTime = LocalDateTime.now()
-
-        for (week in weeks.size downTo 1) {
-            val cfbWeek = weeks[week - 1] // subtract 1 because 0-based idx
-            if (curTime.isAfter(cfbWeek)) return week
-        }
-
-        return weeks.size
     }
 }

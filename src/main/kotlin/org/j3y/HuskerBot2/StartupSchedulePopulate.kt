@@ -6,6 +6,7 @@ import org.j3y.HuskerBot2.commands.betting.BetCreate
 import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.HuskersDotComService
+import org.j3y.HuskerBot2.util.WeekResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.ApplicationArguments
@@ -33,6 +34,8 @@ class StartupSchedulePopulate {
             val isConference = game.path("is_conference").asBoolean()
             val venueType = game.path("venue_type").asText()
 
+            val week = WeekResolver.getCfbWeek(datetime)
+
             var sched: ScheduleEntity = scheduleRepo.findById(id).orElse(ScheduleEntity(id))
             sched.opponent = opponent
             sched.location = location
@@ -41,7 +44,7 @@ class StartupSchedulePopulate {
             sched.opponentLogo = opponentLogo
             sched.dateTime = datetime
             sched.season = year
-            sched.week = index + 1
+            sched.week = week
 
             log.info("Saving Sched Item: {} - {} - {}", sched.id, sched.opponent, sched.dateTime.toString())
 

@@ -8,14 +8,16 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import org.j3y.HuskerBot2.model.NflGameEntity
+import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
+import org.j3y.HuskerBot2.repository.NflPickRepo
 import org.j3y.HuskerBot2.service.EspnService
+import org.j3y.HuskerBot2.util.WeekResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import java.awt.Color
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -23,7 +25,8 @@ import java.time.format.DateTimeFormatter
 
 @Component
 class NflPickem {
-
+    @Autowired
+    private lateinit var nflPickRepo: NflPickRepo
     @Autowired lateinit var jda: JDA
     @Autowired lateinit var espnService: EspnService
     @Autowired lateinit var nflGameRepo: NflGameRepo
@@ -31,34 +34,13 @@ class NflPickem {
 
     private val log = LoggerFactory.getLogger(NflPickem::class.java)
 
-    private val YEAR = LocalDateTime.now().year
-
-    private val weeks: List<LocalDateTime> = listOf(
-        LocalDateTime.parse("${YEAR}-01-01T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-10T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-17T00:00:00"),
-        LocalDateTime.parse("${YEAR}-09-24T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-01T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-08T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-15T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-22T00:00:00"),
-        LocalDateTime.parse("${YEAR}-10-29T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-05T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-12T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-19T00:00:00"),
-        LocalDateTime.parse("${YEAR}-11-26T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-03T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-10T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-17T00:00:00"),
-        LocalDateTime.parse("${YEAR}-12-24T00:00:00")
-    )
-
     // Every Tuesday at 2:00 AM Central
     @Scheduled(cron = "0 0 2 * * TUE", zone = "America/Chicago")
     fun postWeeklyPickem() {
+        processPreviousWeek()
         deleteAllPosts()
 
-        val week = getCurrentWeek()
+        val week = WeekResolver.currentNflWeek()
         log.info("Posting NFL Pick'em for week {}", week)
         val data = espnService.getNflScoreboard(week)
 
@@ -72,6 +54,7 @@ class NflPickem {
             if (events.isEmpty) {
                 channel.sendMessage("No NFL games found for week $week.").queue()
             } else {
+                channel.sendMessage("# \uD83C\uDFC8 NFL Pick'em for week $week \uD83C\uDFC8 \nGet your picks in before game time for each game!").queue()
                 events.forEach { event ->
                     val embed = buildGameEmbed(event)
                     val (awayName, awayId, homeName, homeId, eventId) = extractIds(event)
@@ -90,8 +73,8 @@ class NflPickem {
                     nflGameRepo.save(nflGame)
 
                     val buttons = listOf(
-                        Button.primary("nflpickem|$eventId|$awayId", "${awayName}"),
-                        Button.secondary("nflpickem|$eventId|$homeId", "${homeName}")
+                        Button.primary("nflpickem|$eventId|$awayId", awayName),
+                        Button.secondary("nflpickem|$eventId|$homeId", homeName)
                     )
                     channel.sendMessageEmbeds(embed).setActionRow(buttons).queue()
                 }
@@ -99,15 +82,6 @@ class NflPickem {
         } catch (e: Exception) {
             log.error("Failed to post pick'em", e)
         }
-    }
-
-    private fun getCurrentWeek(): Int {
-        val curTime = LocalDateTime.now()
-        for (week in weeks.size downTo 1) {
-            val nflWeek = weeks[week - 1]
-            if (curTime.isAfter(nflWeek)) return week
-        }
-        return weeks.size
     }
 
     private fun buildGameEmbed(event: JsonNode): net.dv8tion.jda.api.entities.MessageEmbed {
@@ -235,5 +209,55 @@ class NflPickem {
 
     private fun getGame(eventId: String): NflGameEntity {
         return nflGameRepo.findById(eventId.toLong()).orElse(NflGameEntity(eventId.toLong()))
+    }
+
+    private fun processPreviousWeek() {
+        val prevWeek = WeekResolver.currentNflWeek() - 1
+
+        if (prevWeek <= 0) {
+            log.warn("Not processing previous week - there were no games in week {}", prevWeek)
+            return
+        }
+
+        val data = espnService.getNflScoreboard(prevWeek)
+        val events = data.path("events")
+        if (events.isEmpty) {
+            log.warn("No NFL games found for week {}", prevWeek)
+            return
+        }
+
+        events.forEach { event ->
+            val (awayName, awayId, homeName, homeId, eventId) = extractIds(event)
+            val status = event.path("status").path("type").path("name").asText("TBD")
+
+            if (status != "STATUS_FINAL") {
+                log.info("Skipping game {} because it is not final", eventId)
+                return@forEach
+            }
+
+            val teams = event.path("competitions").path(0).path("competitors")
+            val homeTeam = teams.find { it.path("homeAway").asText() == "home" }
+            val awayTeam = teams.find { it.path("homeAway").asText() == "away" }
+            val homeScore = homeTeam?.path("score")?.asInt(0) ?: 0
+            val awayScore = awayTeam?.path("score")?.asInt(0) ?: 0
+
+
+            val game = nflGameRepo.findById(eventId.toLong())
+                .orElseThrow { RuntimeException("Could not find game with id $eventId") }
+
+            game.homeScore = homeScore
+            game.awayScore = awayScore
+            game.winnerId = if (homeScore > awayScore) homeId.toLong() else awayId.toLong()
+            nflGameRepo.save(game)
+
+            val gamePicks = nflPickRepo.findByGameId(game.id)
+            gamePicks.forEach { this.processPick(it, game) }
+            nflPickRepo.saveAll(gamePicks)
+        }
+    }
+
+    private fun processPick(nflPick: NflPick, nflGameEntity: NflGameEntity) {
+        nflPick.correctPick = nflPick.winningTeamId == nflGameEntity.winnerId
+        nflPick.processed = true
     }
 }

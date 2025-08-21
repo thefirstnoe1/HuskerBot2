@@ -18,4 +18,6 @@ interface NflPickRepo : JpaRepository<NflPick, NflPickId> {
     fun findCountByUserIdAndSeasonAndCorrectPickIsTrue(userId: Long, season: Int): Int
 
     fun findByGameIdAndUserId(gameId: Long, userId: Long): NflPick?
+
+    fun findByGameId(gameId: Long): List<NflPick>
 }
