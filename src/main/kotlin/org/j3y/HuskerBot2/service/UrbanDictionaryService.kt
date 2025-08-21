@@ -22,13 +22,11 @@ class UrbanDictionaryService(
         val word: String,
         val definition: String,
         val example: String?,
-        val thumbsUp: Int,
-        val thumbsDown: Int,
         val author: String?,
         val permalink: String?
     )
 
-    fun define(term: String): UrbanDefinition? {
+    fun defineAll(term: String): List<UrbanDefinition> {
         return try {
             val uri = UriComponentsBuilder
                 .fromHttpUrl(baseUrl)
@@ -44,23 +42,27 @@ class UrbanDictionaryService(
             val response = client.exchange(uri, HttpMethod.GET, entity, JsonNode::class.java).body
             val list = response?.get("list")
             if (list != null && list.isArray && list.size() > 0) {
-                val first = list.get(0)
-                UrbanDefinition(
-                    word = first.get("word")?.asText() ?: term,
-                    definition = cleanUdText(first.get("definition")?.asText() ?: ""),
-                    example = cleanUdText(first.get("example")?.asText() ?: ""),
-                    thumbsUp = first.get("thumbs_up")?.asInt() ?: 0,
-                    thumbsDown = first.get("thumbs_down")?.asInt() ?: 0,
-                    author = first.get("author")?.asText(),
-                    permalink = first.get("permalink")?.asText()
-                )
+                list.map { node ->
+                    UrbanDefinition(
+                        word = node.get("word")?.asText() ?: term,
+                        definition = cleanUdText(node.get("definition")?.asText() ?: ""),
+                        example = cleanUdText(node.get("example")?.asText() ?: ""),
+                        author = node.get("author")?.asText(),
+                        permalink = node.get("permalink")?.asText()
+                    )
+                }
             } else {
-                null
+                emptyList()
             }
         } catch (ex: Exception) {
-            log.error("Error fetching Urban Dictionary definition for term: {}", term, ex)
-            null
+            log.error("Error fetching Urban Dictionary definitions for term: {}", term, ex)
+            emptyList()
         }
+    }
+
+    fun define(term: String): UrbanDefinition? {
+        val all = defineAll(term)
+        return if (all.isNotEmpty()) all[0] else null
     }
 
     private fun cleanUdText(text: String): String {

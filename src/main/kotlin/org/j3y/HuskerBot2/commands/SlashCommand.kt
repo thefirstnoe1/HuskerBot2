@@ -1,6 +1,7 @@
 package org.j3y.HuskerBot2.commands
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
@@ -18,6 +19,10 @@ open class SlashCommand {
 
     open fun execute(commandEvent: SlashCommandInteractionEvent) {
         getSubcommands().find { it.getCommandKey() == commandEvent.subcommandName }?.execute(commandEvent)
+    }
+
+    open fun buttonEvent(buttonEvent: ButtonInteractionEvent) {
+        getSubcommands().find { it.getCommandKey() == buttonEvent.componentId.split("|")[0] }?.buttonEvent(buttonEvent)
     }
 
     fun getSubcommandData(): List<SubcommandData> {
