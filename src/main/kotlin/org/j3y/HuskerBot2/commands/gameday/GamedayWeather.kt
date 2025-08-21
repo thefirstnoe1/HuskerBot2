@@ -4,21 +4,25 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.j3y.HuskerBot2.commands.SlashCommand
-import org.j3y.HuskerBot2.model.HuskerGameEntity
+import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.model.WeatherForecast
-import org.j3y.HuskerBot2.service.GameService
+import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.WeatherService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.awt.Color
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @Component
-class GamedayWeather(
-    private final val gameService: GameService,
-    private final val weatherService: WeatherService
-) : SlashCommand() {
+class GamedayWeather : SlashCommand() {
+    
+    @Autowired lateinit var scheduleRepo: ScheduleRepo
+    @Autowired lateinit var weatherService: WeatherService
     
     private final val log = LoggerFactory.getLogger(GamedayWeather::class.java)
     
@@ -30,27 +34,29 @@ class GamedayWeather(
         commandEvent.deferReply().queue()
         
         try {
-            val nextGame = gameService.getNextGame()
+            val nextGame = getNextGame()
             if (nextGame == null) {
                 commandEvent.hook.sendMessage("No upcoming games found.").queue()
                 return
             }
             
-            if (!gameService.isGameWithinWeek(nextGame.gameDate)) {
+            if (!isGameWithinWeek(nextGame.dateTime)) {
                 commandEvent.hook.sendMessage("Game is beyond 7-day weather forecast range.").queue()
                 return
             }
             
-            val coordinates = weatherService.getCoordinates(nextGame.location)
+            val gameLocation = getGameLocation(nextGame)
+            val coordinates = weatherService.getCoordinates(gameLocation)
             if (coordinates == null) {
-                commandEvent.hook.sendMessage("Unable to find location coordinates for ${nextGame.location}.").queue()
+                commandEvent.hook.sendMessage("Unable to find location coordinates for $gameLocation.").queue()
                 return
             }
             
+            val gameDateTime = LocalDateTime.ofInstant(nextGame.dateTime, ZoneId.of("America/Chicago"))
             val weather = weatherService.getWeatherForecast(
                 coordinates.latitude, 
                 coordinates.longitude, 
-                nextGame.gameDate
+                gameDateTime
             )
             
             val embed = createWeatherEmbed(nextGame, weather)
@@ -62,16 +68,62 @@ class GamedayWeather(
         }
     }
     
-    private fun createWeatherEmbed(game: HuskerGameEntity, weather: WeatherForecast?): MessageEmbed {
+    private fun getNextGame(): ScheduleEntity? {
+        return try {
+            val currentYear = LocalDateTime.now().year
+            val allGames = scheduleRepo.findAllBySeasonOrderByDateTimeAsc(currentYear)
+            val now = Instant.now()
+            
+            val nextGame = allGames.firstOrNull { it.dateTime.isAfter(now) }
+            if (nextGame != null) {
+                log.info("Found next game: ${nextGame.opponent} on ${nextGame.dateTime}")
+            } else {
+                log.info("No upcoming games found for season $currentYear")
+            }
+            nextGame
+        } catch (e: Exception) {
+            log.error("Error retrieving next game", e)
+            null
+        }
+    }
+    
+    private fun isGameWithinWeek(gameDateTime: Instant): Boolean {
+        val gameDate = LocalDateTime.ofInstant(gameDateTime, ZoneId.systemDefault())
+        val now = LocalDateTime.now()
+        val daysUntilGame = ChronoUnit.DAYS.between(now, gameDate)
+        return daysUntilGame <= 7 && daysUntilGame >= 0
+    }
+    
+    private fun getGameLocation(scheduleEntity: ScheduleEntity): String {
+        return when {
+            scheduleEntity.venueType.equals("home", ignoreCase = true) -> "Lincoln, NE"
+            scheduleEntity.location.isNotBlank() -> scheduleEntity.location
+            else -> "Unknown Location"
+        }
+    }
+    
+    private fun getGameVenue(scheduleEntity: ScheduleEntity): String {
+        return when {
+            scheduleEntity.venueType.equals("home", ignoreCase = true) -> "Memorial Stadium"
+            scheduleEntity.location.isNotBlank() -> scheduleEntity.location
+            else -> "Unknown Venue"
+        }
+    }
+    
+    private fun isHomeGame(scheduleEntity: ScheduleEntity): Boolean {
+        return scheduleEntity.venueType.equals("home", ignoreCase = true)
+    }
+    
+    private fun createWeatherEmbed(game: ScheduleEntity, weather: WeatherForecast?): MessageEmbed {
         val embed = EmbedBuilder()
         
         embed.setTitle("🏈 Huskers Game Day Weather")
         embed.setColor(Color.RED)
         
         embed.addField("🆚 Opponent", game.opponent, true)
-        embed.addField("📅 Game Time", formatGameTime(game.gameDate), true)
-        embed.addField("📍 Location", "${game.venue}, ${game.location}", true)
-        embed.addField("🏠 Home/Away", if (game.isHomeGame) "Home" else "Away", true)
+        embed.addField("📅 Game Time", formatGameTime(game.dateTime), true)
+        embed.addField("📍 Location", "${getGameVenue(game)}, ${getGameLocation(game)}", true)
+        embed.addField("🏠 Home/Away", if (isHomeGame(game)) "Home" else "Away", true)
         
         if (weather != null) {
             embed.addField("🌡️ Temperature", "${weather.temperature}°F", true)
@@ -91,8 +143,9 @@ class GamedayWeather(
         return embed.build()
     }
     
-    private fun formatGameTime(gameDate: java.time.LocalDateTime): String {
-        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' h:mm a")
-        return gameDate.format(formatter)
+    private fun formatGameTime(gameDateTime: Instant): String {
+        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' h:mm a z")
+        val zonedDateTime = gameDateTime.atZone(ZoneId.of("America/Chicago"))
+        return zonedDateTime.format(formatter)
     }
 }
