@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Agent Guidelines ###
+AGENTS.md

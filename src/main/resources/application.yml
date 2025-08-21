@@ -31,3 +31,14 @@ discord:
     recruiting: 1407823800824889445
     admin: 1407823859155206224
 
+weather:
+  nominatim:
+    base-url: "https://nominatim.openstreetmap.org"
+    rate-limit-delay: 1000
+  nws:
+    base-url: "https://api.weather.gov"
+    user-agent: "HuskerBot2 (huskerbot@example.com)"
+  cache:
+    coordinates-ttl: 86400
+    forecast-ttl: 1800
+
