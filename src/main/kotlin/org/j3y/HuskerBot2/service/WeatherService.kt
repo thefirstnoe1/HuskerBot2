@@ -137,7 +137,7 @@ class WeatherService {
                                 detailedForecast = period.get("detailedForecast")?.asText() ?: "No details available",
                                 windSpeed = period.get("windSpeed")?.asText() ?: "Unknown",
                                 windDirection = period.get("windDirection")?.asText() ?: "Unknown",
-                                humidity = period.get("relativeHumidity")?.get("value")?.asText()
+                                humidity = period.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" }
                             )
                         }
                     }
@@ -152,7 +152,7 @@ class WeatherService {
                         detailedForecast = firstPeriod.get("detailedForecast")?.asText() ?: "No details available",
                         windSpeed = firstPeriod.get("windSpeed")?.asText() ?: "Unknown",
                         windDirection = firstPeriod.get("windDirection")?.asText() ?: "Unknown",
-                        humidity = firstPeriod.get("relativeHumidity")?.get("value")?.asText()
+                        humidity = firstPeriod.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" }
                     )
                 }
             }

@@ -78,7 +78,7 @@ class GamedayWeather(
             embed.addField("☁️ Conditions", weather.shortForecast, true)
             embed.addField("💨 Wind", "${weather.windSpeed} ${weather.windDirection}", true)
             weather.humidity?.let { 
-                embed.addField("💧 Humidity", "${it}%", true) 
+                embed.addField("🌧️ Precipitation", it, true) 
             }
             embed.addField("📋 Detailed Forecast", weather.detailedForecast, false)
         } else {
