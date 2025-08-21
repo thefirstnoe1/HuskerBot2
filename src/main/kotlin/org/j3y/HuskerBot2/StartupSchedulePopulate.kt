@@ -44,7 +44,7 @@ class StartupSchedulePopulate {
             sched.opponentLogo = opponentLogo
             sched.dateTime = datetime
             sched.season = year
-            sched.week = week
+            sched.week = index + 1
 
             log.info("Saving Sched Item: {} - {} - {}", sched.id, sched.opponent, sched.dateTime.toString())
 

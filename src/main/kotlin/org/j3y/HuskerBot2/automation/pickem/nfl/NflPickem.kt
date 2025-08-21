@@ -25,13 +25,13 @@ import java.time.format.DateTimeFormatter
 
 @Component
 class NflPickem {
+    private final val log = LoggerFactory.getLogger(NflPickem::class.java)
+
     @Autowired private lateinit var nflPickRepo: NflPickRepo
     @Autowired lateinit var jda: JDA
     @Autowired lateinit var espnService: EspnService
     @Autowired lateinit var nflGameRepo: NflGameRepo
     @Value("\${discord.channels.nfl-pickem}") lateinit var pickemChannelId: String
-
-    private val log = LoggerFactory.getLogger(NflPickem::class.java)
 
     // Every Tuesday at 2:00 AM Central
     @Scheduled(cron = "0 0 2 * * TUE", zone = "America/Chicago")
@@ -80,9 +80,17 @@ class NflPickem {
 
                     nflGameRepo.save(nflGame)
 
+                    // Determine current pick counts for this game
+                    val existingPicks = try { nflPickRepo.findByGameId(eventId.toLong()) } catch (e: Exception) { emptyList() }
+                    val awayCount = existingPicks.count { it.winningTeamId == awayId.toLong() }
+                    val homeCount = existingPicks.count { it.winningTeamId == homeId.toLong() }
+
+                    val awayLabel = "✈\uFE0F $awayName ($awayCount)"
+                    val homeLabel = "\uD83C\uDFE0 $homeName ($homeCount)"
+
                     val buttons = listOf(
-                        Button.primary("nflpickem|$eventId|$awayId", awayName),
-                        Button.secondary("nflpickem|$eventId|$homeId", homeName)
+                        Button.primary("nflpickem|$eventId|$awayId", awayLabel),
+                        Button.primary("nflpickem|$eventId|$homeId", homeLabel)
                     )
                     channel.sendMessageEmbeds(embed).setActionRow(buttons).queue()
                 }

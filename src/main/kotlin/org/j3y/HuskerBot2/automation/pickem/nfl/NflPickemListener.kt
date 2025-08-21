@@ -31,10 +31,12 @@ class NflPickemListener : ListenerAdapter() {
             val game = nflGameRepo.findById(eventId.toLong()).orElse(null)
             if (game == null) {
                 event.reply("Sorry, we don't have any data for game $eventId.").setEphemeral(true).queue()
+                return
             }
 
             if (Instant.now().isAfter(game.dateTime)) {
                 event.reply("You cannot make a pick after the game has already started!").setEphemeral(true).queue()
+                return
             }
 
             val pick = if (game.homeTeamId == teamId.toLong()) game.homeTeam else game.awayTeam
@@ -46,7 +48,23 @@ class NflPickemListener : ListenerAdapter() {
 
             nflPickRepo.save(pickEntity)
 
-            // We don't persist in this issue; acknowledge selection ephemerally
+            // After saving, recompute counts and update the message buttons
+            val picksForGame = try { nflPickRepo.findByGameId(game.id) } catch (e: Exception) { emptyList() }
+            val awayCount = picksForGame.count { it.winningTeamId == game.awayTeamId }
+            val homeCount = picksForGame.count { it.winningTeamId == game.homeTeamId }
+
+            val awayLabel = "✈\uFE0F ${game.awayTeam} (${awayCount})"
+            val homeLabel = "\uD83C\uDFE0 ${game.homeTeam} (${homeCount})"
+
+            val eventIdStr = game.id.toString()
+            val updatedButtons = listOf(
+                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("nflpickem|$eventIdStr|${game.awayTeamId}", awayLabel),
+                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("nflpickem|$eventIdStr|${game.homeTeamId}", homeLabel)
+            )
+
+            // Acknowledge ephemerally and also update the original message's action row
+            event.message.editMessageComponents(net.dv8tion.jda.api.interactions.components.ActionRow.of(updatedButtons)).queue()
+
             event.reply("You picked team $pick for game ${game.awayTeam} @ ${game.homeTeam}. Thanks!")
                 .setEphemeral(true)
                 .queue()

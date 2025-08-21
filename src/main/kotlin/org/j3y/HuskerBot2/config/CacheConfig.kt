@@ -23,7 +23,8 @@ class CacheConfig {
             "teamData",
             "coordinates",
             "weather-forecast",
-            "cfb-matchup"
+            "cfb-matchup",
+            "cfb-lines"
         )
         cacheManager.setCaffeine(
             Caffeine.newBuilder()
