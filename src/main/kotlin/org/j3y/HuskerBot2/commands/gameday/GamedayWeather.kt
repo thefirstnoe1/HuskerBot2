@@ -122,7 +122,7 @@ class GamedayWeather : SlashCommand() {
         
         embed.addField("🆚 Opponent", game.opponent, true)
         embed.addField("📅 Game Time", formatGameTime(game.dateTime), true)
-        embed.addField("📍 Location", "${getGameVenue(game)}, ${getGameLocation(game)}", true)
+        embed.addField("📍 Location", getGameLocation(game), true)
         embed.addField("🏠 Home/Away", if (isHomeGame(game)) "Home" else "Away", true)
         
         if (weather != null) {
