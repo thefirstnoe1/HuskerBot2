@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.springframework.stereotype.Component
 import org.springframework.web.client.HttpStatusCodeException
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
 
@@ -32,21 +33,22 @@ class OsrsStats : SlashCommand() {
         val player = commandEvent.getOption("player")?.asString ?: ""
 
         val url = UriComponentsBuilder
-            .fromHttpUrl("https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws")
+            .fromUriString("https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws")
             .queryParam("player", player)
             .build().toUri()
 
         val response: String
         try {
             response = client.getForObject(url, String::class.java) ?: ""
-        } catch (hsce: HttpStatusCodeException) {
-            commandEvent.hook.sendMessage("That player's high scores were not found.")
+        } catch (hsce: RestClientException) {
+            commandEvent.hook.sendMessage("High scores were not found for player: $player").queue()
             return
         }
 
         val respTokens = response.split("\n").filter { it.isNotBlank() }
-        val sb = StringBuilder("```prolog\n")
-        sb.append(String.format("%18s%16s%11s\n", "Lvl", "XP", "Rank"))
+        val sb = StringBuilder("## ⚔\uFE0F OSRS High Scores for $player")
+            .append("\n```prolog\n")
+            .append(String.format("%18s%16s%11s\n", "Lvl", "XP", "Rank"))
 
         skills.forEachIndexed { i, skill ->
             if (i < respTokens.size) {

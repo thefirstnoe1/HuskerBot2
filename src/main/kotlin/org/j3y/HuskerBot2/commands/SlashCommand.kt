@@ -17,10 +17,10 @@ open class SlashCommand {
     open fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.ENABLED
 
     open fun execute(commandEvent: SlashCommandInteractionEvent) {
-        getSubcommands().find { println(it.getCommandKey()); it.getCommandKey() == commandEvent.subcommandName }?.execute(commandEvent)
+        getSubcommands().find { it.getCommandKey() == commandEvent.subcommandName }?.execute(commandEvent)
     }
 
-    open fun getSubcommandData(): List<SubcommandData> {
+    fun getSubcommandData(): List<SubcommandData> {
         return getSubcommands().map { SubcommandData(it.getCommandKey(), it.getDescription()).addOptions(it.getOptions()) }
     }
 }

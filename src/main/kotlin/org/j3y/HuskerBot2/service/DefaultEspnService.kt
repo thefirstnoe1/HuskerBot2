@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.util.UriComponentsBuilder
+import java.awt.Color
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -26,14 +27,14 @@ class DefaultEspnService : EspnService {
 
     private final val FORMATTER_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd")
     private final val FORMATTER_NHL_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-    private final val FORMATTER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a z")
+    private final val FORMATTER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a z")
     private final val YEAR = LocalDate.now().year
 
     @Cacheable("cfbScoreboards")
     override fun getCfbScoreboard(league: Int, week: Int): JsonNode {
         log.info("Updating CFB ESPN Cache.")
         val espnUriBuilder =
-            UriComponentsBuilder.fromHttpUrl(
+            UriComponentsBuilder.fromUriString(
                 "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard" +
                     "?lang=en&region=us&calendartype=blacklist&limit=300&dates=${YEAR}&seasontype=2"
             )
@@ -152,16 +153,20 @@ class DefaultEspnService : EspnService {
         return sb.toString()
     }
 
-    override fun buildEventEmbed(apiData: JsonNode, title: String): MessageEmbed {
+    override fun buildEventEmbed(apiData: JsonNode): List<MessageEmbed> {
         val events = apiData.path("events") as ArrayNode
-        val emb = EmbedBuilder().setTitle(title)
+        val embeds: MutableList<MessageEmbed> = mutableListOf()
 
         if (events.isEmpty) {
+            val emb = EmbedBuilder().setTitle("Schedule...")
             emb.setDescription("No games were found.")
-            return emb.build()
+            return listOf(emb.build())
         }
 
         var currentDay = ""
+        var emb = EmbedBuilder()
+        var sb = StringBuilder()
+
         events.forEach { event ->
             val dateStr = event.path("date").asText()
             val period = event.path("status").path("period").asInt()
@@ -171,8 +176,16 @@ class DefaultEspnService : EspnService {
 
             val eventDay = date.dayOfWeek.toString()
             if (currentDay != eventDay) {
+                if (!currentDay.isEmpty()) {
+                    emb.setDescription(sb.toString())
+                    emb.setColor(Color.RED)
+                    embeds.add(emb.build())
+
+                    sb = StringBuilder()
+                }
+
                 currentDay = eventDay
-                emb.addField("Day", "${eventDay} - ${date.format(FORMATTER_DATE)}", false)
+                emb = EmbedBuilder().setTitle("\uD83D\uDCC5 \u200E $eventDay ${date.format(FORMATTER_DATE)}")
             }
 
             val competition = event.path("competitions").path(0)
@@ -180,18 +193,18 @@ class DefaultEspnService : EspnService {
                 .path("names").path(0).asText("TBD")
 
             val away = competition.path("competitors").path(1)
-            var awayTeam = away.path("team").path("abbreviation").asText()
+            var awayTeam = "**${away.path("team").path("abbreviation").asText()}**"
             val isAwayWinner = away.path("winner").asBoolean(false)
             val awayRank = away.path("curatedRank").path("current").asInt(99)
-            if (isAwayWinner) awayTeam = "${awayTeam}*"
-            if (awayRank <= 25) awayTeam = "${awayRank} ${awayTeam}"
+            if (isAwayWinner) awayTeam = "${awayTeam}\\*"
+            if (awayRank <= 25) awayTeam = "_${awayRank}_ ${awayTeam}"
 
             val home = competition.path("competitors").path(0)
-            var homeTeam = home.path("team").path("abbreviation").asText()
+            var homeTeam = "**${home.path("team").path("abbreviation").asText()}**"
             val isHomeWinner = home.path("winner").asBoolean(false)
             val homeRank = home.path("curatedRank").path("current").asInt(99)
-            if (isHomeWinner) homeTeam = "*${homeTeam}"
-            if (homeRank <= 25) homeTeam = "${homeTeam} ${homeRank}"
+            if (isHomeWinner) homeTeam = "\\*${homeTeam}"
+            if (homeRank <= 25) homeTeam = "${homeTeam} _${homeRank}_"
 
             val status = if (period > 0) {
                 val competitors = event.path("competitions").path(0).path("competitors")
@@ -205,12 +218,16 @@ class DefaultEspnService : EspnService {
                 "TBD"
             }
 
-            val game = String.format("%s @ %s", awayTeam, homeTeam)
-            emb.addField("Network", network, true)
-            emb.addField("Game", game, true)
-            emb.addField("Status", status, true)
+            //sb.append(String.format("\n%-8s%10s @ %-10s %-7s", "[${network}]", awayTeam, homeTeam, status))
+            sb.append("\n$status \u200E \u200E \u200E \u200E $awayTeam @ $homeTeam \u200E \u200E  • \u200E \u200E  $network")
         }
 
-        return emb.build()
+        if (!currentDay.isEmpty()) {
+            emb.setDescription(sb.toString())
+            emb.setColor(Color.RED)
+            embeds.add(emb.build())
+        }
+
+        return embeds
     }
 }

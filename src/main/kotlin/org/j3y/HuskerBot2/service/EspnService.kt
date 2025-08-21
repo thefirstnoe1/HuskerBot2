@@ -10,5 +10,5 @@ interface EspnService {
     fun getTeamData(team: String): JsonNode
 
     fun buildEventString(apiData: JsonNode, title: String): String
-    fun buildEventEmbed(apiData: JsonNode, title: String): MessageEmbed
+    fun buildEventEmbed(apiData: JsonNode): List<MessageEmbed>
 }

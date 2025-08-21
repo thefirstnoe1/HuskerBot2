@@ -1,6 +1,8 @@
 package org.j3y.HuskerBot2.commands.mod
 
+import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.exceptions.PermissionException
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
@@ -8,6 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.springframework.stereotype.Component
+import java.awt.Color
 import java.time.Duration
 
 @Component
@@ -23,10 +26,8 @@ class Iowa : SlashCommand() {
     override fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE)
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        commandEvent.deferReply(true).queue()
-
         val user = commandEvent.getOption("user")?.asMember
-        if (user == null) { commandEvent.hook.sendMessage("Invalid user.").queue(); return }
+        if (user == null) { commandEvent.reply("Invalid user.").setEphemeral(true).queue(); return }
 
         val length = commandEvent.getOption("minutes")?.asInt ?: 30
         val duration = Duration.ofMinutes(length.toLong())
@@ -36,14 +37,20 @@ class Iowa : SlashCommand() {
         try {
             user.timeoutFor(duration).reason(reason).queue(
                 {
-                    commandEvent.channel.sendMessage("${user.user.effectiveName} has been sent to Iowa for ${length} minutes with reason: ${reason}").queue()
-                    commandEvent.hook.deleteOriginal().queue()
+                    commandEvent.replyEmbeds(
+                        EmbedBuilder()
+                            .setTitle("Banished to Iowa")
+                            .setColor(Color.YELLOW)
+                            .setDescription("${user.effectiveName} has been banished to Iowa!")
+                            .addField("Reason", reason, false)
+                            .addField("Duration", "${duration.toMinutes()} minutes", false)
+                            .build()
+                    ).queue()
                 },
-                { commandEvent.hook.sendMessage("Unable to Iowa ${user.user.effectiveName}.").queue() }
+                { commandEvent.reply("Unable to Iowa ${user.user.effectiveName}.").setEphemeral(true).queue() }
             )
         } catch(e: PermissionException) {
-            e.printStackTrace()
-            commandEvent.hook.sendMessage("You do not have permission to Iowa ${user.user.effectiveName}.").queue()
+            commandEvent.reply("You do not have permission to Iowa ${user.user.effectiveName}.").setEphemeral(true).queue()
         }
     }
 }
