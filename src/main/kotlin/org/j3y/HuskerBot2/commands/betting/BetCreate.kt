@@ -55,7 +55,6 @@ class BetCreate : SlashCommand() {
         val predictSpread = commandEvent.getOption("predict-spread")?.asString ?: "Nebraska"
         val userId = commandEvent.user.idLong
         val userTag = commandEvent.user.asTag
-        var opponent = "N/A"
 
         val sched = scheduleRepo.findBySeasonAndWeek(season, week)
         if (sched == null) {
@@ -63,7 +62,7 @@ class BetCreate : SlashCommand() {
             return
         }
 
-        opponent = sched.opponent
+        var opponent = sched.opponent
 
         val hourBeforeGameTime = sched.dateTime.minus(1, ChronoUnit.HOURS)
         if (Instant.now().isAfter(hourBeforeGameTime)) {
