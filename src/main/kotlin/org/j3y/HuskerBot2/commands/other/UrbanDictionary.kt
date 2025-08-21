@@ -67,11 +67,6 @@ class UrbanDictionary : SlashCommand() {
             val totalFromId = parts[4].toIntOrNull() ?: 0
             val userId = parts[5]
 
-            if (event.user.id != userId) {
-                event.reply("Only the requester can use these buttons.").setEphemeral(true).queue()
-                return
-            }
-
             val defs = urbanService.defineAll(term)
             val total = if (defs.isNotEmpty()) defs.size else totalFromId
             if (defs.isEmpty()) {

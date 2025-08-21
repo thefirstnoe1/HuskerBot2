@@ -14,7 +14,8 @@ import org.springframework.web.util.UriComponentsBuilder
 @Service
 class CfbMatchupService(
     @Value("\${cfbd.base-url}") private val baseUrl: String,
-    @Value("\${cfbd.user-agent}") private val userAgent: String
+    @Value("\${cfbd.user-agent}") private val userAgent: String,
+    @Value("\${cfbd.api-key}") private val apiKey: String
 ) {
     
     private val log = LoggerFactory.getLogger(CfbMatchupService::class.java)
@@ -50,13 +51,14 @@ class CfbMatchupService(
             
             val headers = HttpHeaders()
             headers.set("User-Agent", userAgent)
+            headers.set("Authorization", "Bearer $apiKey")
             val entity = HttpEntity<String>(headers)
             
             val uri = UriComponentsBuilder
                 .fromHttpUrl("$baseUrl/teams/matchup")
                 .queryParam("team1", team1)
                 .queryParam("team2", team2)
-                .build(true)
+                .build(false)
                 .toUri()
             
             log.debug("Making request to: $uri")

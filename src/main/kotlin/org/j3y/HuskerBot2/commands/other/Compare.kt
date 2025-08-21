@@ -79,11 +79,6 @@ class Compare(
             val currentPage = parts[4].toIntOrNull() ?: 0
             val userId = parts[5]
             
-            if (event.user.id != userId) {
-                event.reply("Only the requester can use these buttons.").setEphemeral(true).queue()
-                return
-            }
-            
             val matchupData = cfbMatchupService.getTeamMatchup(team1, team2)
             if (matchupData == null) {
                 event.reply("Could not load matchup data.").setEphemeral(true).queue()
@@ -120,7 +115,13 @@ class Compare(
         // Series summary
         val totalGames = matchupData.team1Wins + matchupData.team2Wins + matchupData.ties
         val seriesSummary = buildString {
-            append("**Series Record:** ${matchupData.team1} leads ${matchupData.team1Wins}-${matchupData.team2Wins}")
+            var leadsTrails = "leads"
+            if (matchupData.team1Wins < matchupData.team2Wins) {
+                leadsTrails = "trails"
+            } else if (matchupData.team1Wins == matchupData.team2Wins) {
+                leadsTrails = "ties"
+            }
+            append("**Series Record:** ${matchupData.team1} $leadsTrails ${matchupData.team1Wins}-${matchupData.team2Wins}")
             if (matchupData.ties > 0) append("-${matchupData.ties}")
             append(" ($totalGames games)")
         }

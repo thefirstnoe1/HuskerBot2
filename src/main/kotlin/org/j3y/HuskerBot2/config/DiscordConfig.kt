@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import org.j3y.HuskerBot2.commands.CommandListener
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.DefaultEspnService
 import org.slf4j.LoggerFactory
@@ -32,7 +33,7 @@ class DiscordConfig {
     fun getDiscordClient(
         @Value("\${discord.token}") token: String,
         slashCommands: Array<SlashCommand>,
-        commandListener: CommandListener,
+        listeners: Array<ListenerAdapter>,
     ): JDA {
         val jda = JDABuilder.createLight(token, EnumSet.of(
                 GatewayIntent.MESSAGE_CONTENT,
@@ -41,7 +42,7 @@ class DiscordConfig {
                 GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS
             ))
-            .addEventListeners(commandListener)
+            .addEventListeners(*listeners)
             .setMemberCachePolicy(MemberCachePolicy.ALL)
             .build()
 

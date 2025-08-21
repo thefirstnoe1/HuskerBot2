@@ -18,4 +18,10 @@ class ScheduleEntity(
     var dateTime: Instant = Instant.now(),
     var season: Int = 2025,
     var week: Int = 0,
+    var huskersScore: Int? = 0,
+    var opponentScore: Int? = 0,
+    var didNebraskaBeatSpread: Boolean? = null,
+    var spread: String = "",
+    var overUnder: Double? = null,
+    var completed: Boolean? = false,
 )

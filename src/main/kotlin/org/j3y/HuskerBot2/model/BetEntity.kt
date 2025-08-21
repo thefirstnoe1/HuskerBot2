@@ -23,4 +23,9 @@ class BetEntity(
     var winner: String = "",
     var predictPoints: String = "",
     var predictSpread: String = "",
+
+    var processed: Boolean? = false,
+    var correctWinner: Boolean? = null,
+    var correctPoints: Boolean? = null,
+    var correctSpread: Boolean? = null
 )

@@ -51,7 +51,9 @@ class BetLines : SlashCommand() {
         val sched = scheduleRepo.findBySeasonAndWeek(season, week)
         val scoreboardData: JsonNode = espnService.getCfbScoreboard(BIG_10_ID, week)
 
-        val event: JsonNode = scoreboardData.path("events").filter { it.path("name").asText().contains("Nebraska Cornhuskers") }.get(0)
+        val event: JsonNode = scoreboardData.path("events").find { it.path("name").asText().contains("Nebraska Cornhuskers") } ?:
+            return commandEvent.hook.sendMessage("Unable to find Nebraska Cornhuskers game for week $week.").queue()
+
         val lines = event.path("competitions").path(0).path("odds").path(0)
 
         val details = lines.path("details").asText()
