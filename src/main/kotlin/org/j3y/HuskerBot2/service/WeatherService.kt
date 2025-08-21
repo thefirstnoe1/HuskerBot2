@@ -89,7 +89,11 @@ class WeatherService {
             headers.set("User-Agent", USER_AGENT)
             val entity = HttpEntity<String>(headers)
             
-            val pointsUrl = "$NWS_BASE_URL/points/$latitude,$longitude"
+            // Round coordinates to 3 decimal places for NWS API precision requirements
+            val adjustedLatitude = Math.round(latitude * 1000.0) / 1000.0
+            val adjustedLongitude = Math.round(longitude * 1000.0) / 1000.0
+            
+            val pointsUrl = "$NWS_BASE_URL/points/$adjustedLatitude,$adjustedLongitude"
             val pointsResponse = restTemplate.exchange(
                 pointsUrl,
                 HttpMethod.GET,
@@ -107,7 +111,7 @@ class WeatherService {
                 )
                 forecastResponse.body
             } else {
-                log.warn("No forecast URL found for coordinates: $latitude, $longitude")
+                log.warn("No forecast URL found for coordinates: $adjustedLatitude, $adjustedLongitude")
                 null
             }
         } catch (e: Exception) {
