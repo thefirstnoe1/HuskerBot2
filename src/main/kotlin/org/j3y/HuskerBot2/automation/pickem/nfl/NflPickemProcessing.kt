@@ -24,8 +24,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Component
-class NflPickem {
-    private final val log = LoggerFactory.getLogger(NflPickem::class.java)
+class NflPickemProcessing {
+    private final val log = LoggerFactory.getLogger(NflPickemProcessing::class.java)
 
     @Autowired private lateinit var nflPickRepo: NflPickRepo
     @Autowired lateinit var jda: JDA

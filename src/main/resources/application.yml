@@ -57,3 +57,19 @@ cfbd:
 urban:
   base-url: "https://api.urbandictionary.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
+
+---
+# Activate this block by setting SPRING_PROFILES_ACTIVE=mysql
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:huskers}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQLDialect
