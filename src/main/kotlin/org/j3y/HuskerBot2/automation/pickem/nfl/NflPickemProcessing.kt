@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import com.fasterxml.jackson.databind.JsonNode
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import org.j3y.HuskerBot2.model.NflGameEntity
@@ -22,6 +23,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.EnumSet
 
 @Component
 class NflPickemProcessing {
@@ -47,6 +49,13 @@ class NflPickemProcessing {
         if (channel == null) {
             log.warn("Did not find the nfl pickem channel with ID: {}", pickemChannelId)
             return
+        }
+
+        // Ensure channel is read-only for users (no messages or threads)
+        try {
+            ensurePickemChannelReadOnly(channel)
+        } catch (e: Exception) {
+            log.warn("Unable to verify/enforce pick'em channel permissions: {}", e.message)
         }
 
         // First, post results from previous week and current season leaderboard
@@ -352,4 +361,25 @@ class NflPickemProcessing {
         channel.sendMessageEmbeds(eb.build()).queue()
     }
 
+    private fun ensurePickemChannelReadOnly(channel: TextChannel) {
+        val guild = channel.guild
+        val everyone = guild.publicRole
+        val requiredDenied = EnumSet.of(
+            Permission.MESSAGE_SEND,
+            Permission.CREATE_PUBLIC_THREADS,
+            Permission.CREATE_PRIVATE_THREADS,
+            Permission.MESSAGE_SEND_IN_THREADS
+        )
+        val existing = channel.getPermissionOverride(everyone)
+        if (existing == null || !existing.denied.containsAll(requiredDenied)) {
+            channel.upsertPermissionOverride(everyone)
+                .deny(requiredDenied)
+                .queue(
+                    { log.info("Ensured pick'em channel is read-only for @everyone") },
+                    { t -> log.warn("Failed to update pick'em channel permissions: {}", t.message) }
+                )
+        } else {
+            log.debug("Pick'em channel already denies messaging/thread creation for @everyone")
+        }
+    }
 }
