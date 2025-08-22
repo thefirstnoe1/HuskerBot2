@@ -1,7 +1,5 @@
 # HuskerBot2
 
-[![Build Status](https://github.com/j3y/HuskerBot2/actions/workflows/gradle.yml/badge.svg)](https://github.com/j3y/HuskerBot2/actions/workflows/gradle.yml)
-
 HuskerBot2 is a Kotlin/Spring Boot Discord bot for Nebraska Cornhuskers fans. It provides game-day utilities, betting games, pick'em, schedules, weather, and other fun commands.
 
 ## Features
@@ -53,15 +51,73 @@ To build a jar:
 - Unit tests: `./gradlew test`
 - Additional testing scripts live under the `testing/` directory (Python and shell helpers for weather parsing).
 
-## Commands (selected)
-- `/bet create` — create your weekly bet (winner, spread, over/under)
-- `/bet show` — list all bets for a chosen week and totals
-- `/bet lines` — show the betting lines for the selected week
-- `/bet leaderboard` — season-long points leaderboard
-- `/schedule` commands — CFB and NFL schedule utilities
-- `/gameday` commands — game-day on/off and weather
-- `/image` commands — add/list/delete/show stored images
-- Misc: `/urban`, `/compare`, `/osrs`, `/possum`, etc.
+## Commands
+
+- /bet … Betting commands
+  - /bet create week:<int> winner:<Nebraska|Opponent> predict-points:<Over|Under> predict-spread:<Nebraska|Opponent>
+    - Place a bet for a specific week’s Nebraska game. Week choices are populated from the current season schedule.
+  - /bet show week:<int>
+    - Show all submitted bets and totals for the selected week.
+  - /bet lines week:<int>
+    - Show betting lines (spread, over/under, details) for the selected week’s Nebraska game.
+  - /bet leaderboard
+    - Season-long betting leaderboard. Scoring: Winner = 1, Spread = 2, Points = 2.
+
+- /gameday … Gameday mode (Admin only)
+  - /gameday on — Turns gameday mode on.
+  - /gameday off — Turns gameday mode off.
+
+- /gameday-weather
+  - Get weather forecast for the next Huskers game (location-aware, 7-day range).
+
+- /image … Image management
+  - /image add name:<string> url:<string>
+    - Add a named image by URL (http/https). Fails if name already exists or URL is invalid.
+  - /image delete name:<string>
+    - Delete a stored image. You must be the uploader or have Manage Messages permission.
+  - /image show name:<string>
+    - Display a stored image.
+  - /image list
+    - List all stored image names.
+
+- /schedule … Schedule utilities
+  - /schedule cfb [league:<Top 25|ACC|American|Big 12|Big 10|SEC|Pac 12|MAC|Independent>] [week:<int>]
+    - Get CFB scoreboard/schedule for the given week and league. Defaults: Top 25 and current week.
+  - /schedule nfl [week:<int>]
+    - Get NFL scoreboard/schedule for the given week. Default is the current NFL week.
+
+- /countdown
+  - Countdown to the next Nebraska game.
+
+- /ud term:<string>
+  - Look up a term on Urban Dictionary and page through definitions.
+
+- /compare team1:<string> team2:<string>
+  - Compare two CFB teams’ head-to-head history with recent games and series summary.
+
+- /markov [messages:<10-1000>] [order:<1-3>] [seed:<string>]
+  - Generate text from recent channel messages using a Markov chain. Defaults: messages=200, order=2.
+
+- /osrs player:<string>
+  - Show Old School RuneScape high scores for a player.
+
+- /smms destination:<general|recruiting|admin> message:<string> (Manage Messages required)
+  - Send an anonymous “Secret Mammal Message System” embed to the chosen channel.
+
+- /possum message:<string>
+  - Post a “Possum Droppings” embed to the configured possum channel.
+
+- /iowa user:<@member> [reason:<string>] [minutes:<int>] (Manage Messages required)
+  - Time out a user (“banish to Iowa”) with optional reason and duration (default 30 minutes).
+
+- /nebraska user:<@member> (Manage Messages required)
+  - Remove user timeout (“return to Nebraska”).
+
+- /nfl-pickem-leaderboard
+  - Show the NFL Pick’em leaderboard for the current year.
+
+- /nfl-pickem-reload (Manage Messages required)
+  - Reload/repost the weekly NFL Pick’em listing without deleting picks.
 
 ## Notes
 - The bot uses a file-based H2 database located at `~/.discordbot/data` by default. Spring will auto-create/update schema on startup.
