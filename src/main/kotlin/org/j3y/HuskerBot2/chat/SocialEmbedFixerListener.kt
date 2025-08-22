@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.net.URLEncoder
 
 @Component
 class SocialEmbedFixerListener : ListenerAdapter() {
@@ -31,7 +32,7 @@ class SocialEmbedFixerListener : ListenerAdapter() {
                 val lower = url.lowercase()
                 when {
                     // Skip if already using better domains
-                    lower.contains("fxtwitter.com") || lower.contains("vxtiktok.com") || lower.contains("kkinstagram.com") -> null
+                    lower.contains("fxtwitter.com") || lower.contains("vxtiktok.com") || lower.contains("kkinstagram.com") || lower.contains("embedez.seria.moe") -> null
 
                     // Twitter/X -> fxtwitter
                     lower.contains("://twitter.com/") || lower.contains("://www.twitter.com/") ||
@@ -48,6 +49,11 @@ class SocialEmbedFixerListener : ListenerAdapter() {
                     lower.contains("://instagram.com/") || lower.contains("://www.instagram.com/") ->
                         url.replace(Regex("^(https?://)(?:www\\.)?instagram\\.com", RegexOption.IGNORE_CASE),
                             "$1kkinstagram.com")
+
+                    // Facebook -> embedez service
+                    lower.contains("://facebook.com/share/r/") || lower.contains("://www.facebook.com/share/r/") ||
+                            lower.contains("://m.facebook.com/share/r/") ->
+                        "https://embedez.seria.moe/embed?url=" + URLEncoder.encode(url, "UTF-8")
 
                     else -> null
                 }
