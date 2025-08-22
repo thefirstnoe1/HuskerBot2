@@ -1,7 +1,6 @@
 package org.j3y.HuskerBot2.commands.betting
 
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionType
