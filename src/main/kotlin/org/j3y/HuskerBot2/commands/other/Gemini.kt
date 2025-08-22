@@ -39,7 +39,7 @@ class Gemini(
 
             if (message.length >= 1800) {
                 // Truncate to avoid exceeding Discord message limit
-                message = message.substring(0, 1990) + "..."
+                message = message.substring(0, 1800) + "..."
             }
 
             commandEvent.hook.sendMessageEmbeds(
