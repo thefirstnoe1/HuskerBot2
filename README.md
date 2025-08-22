@@ -35,6 +35,7 @@ Edit `src/main/resources/application.yml`:
 - `discord.guilds`: Guild IDs where the bot should operate
 - Channels and category IDs as needed
 - `cfbd.api-key`: CollegeFootballData API key if you use lines/matchup features
+- `gemini.api-key`: Google Gemini API key used by the `/gemini` command (can be set via application.yml or GEMINI_API_KEY)
 - Weather and Urban Dictionary settings are already configured with sensible defaults
 
 ### Database (H2 or MySQL)
