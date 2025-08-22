@@ -78,7 +78,7 @@ class BetLeaderboardTest {
 
         val embed = embedCaptor.value
         assertEquals("🏆 Husker Betting Leaderboard — $season Season", embed.title)
-        assertTrue(embed.description?.contains("Scoring: Winner = 1, Spread = 2, Points = 2") == true)
+        assertTrue(embed.description?.contains("Scoring: Winner = 1, Spread = 2, Over/Under = 2") == true)
 
         // One field named "Leaderboard" should contain up to 20 entries; here we have 4 users
         assertEquals(1, embed.fields.size)
@@ -102,10 +102,10 @@ class BetLeaderboardTest {
 
         // Check that user 1 line contains points and breakdown
         assertTrue(lines[0].contains("— 5 pts"))
-        assertTrue(lines[0].contains("W 1 • S 1 • P 1"))
+        assertTrue(lines[0].contains("W 1 • S 1 • O/U 1"))
 
         // user 3 should have updated tag and 4 pts with 0W 2S 0P
-        assertTrue(lines.any { it.contains("u3#good") && it.contains("— 4 pts") && it.contains("W 0 • S 2 • P 0") })
+        assertTrue(lines.any { it.contains("u3#good") && it.contains("— 4 pts") && it.contains("W 0 • S 2 • O/U 0") })
 
         // users 2 and 4 both 2 pts, order by tag => u2 then u4
         val idx2 = lines.indexOfFirst { it.contains("u2#tag") }

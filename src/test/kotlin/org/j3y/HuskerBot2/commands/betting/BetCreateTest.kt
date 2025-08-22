@@ -140,6 +140,7 @@ class BetCreateTest {
         `when`(event.getMember()).thenReturn(null)
 
         `when`(event.replyEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(replyEmbedAction)
+        `when`(replyEmbedAction.setEphemeral(true)).thenReturn(replyEmbedAction)
 
         // Default week will be 1 because options are missing
         val sched = ScheduleEntity(id = 55, opponent = "Iowa", opponentLogo = "http://img", season = season, week = 1, dateTime = Instant.now().plusSeconds(3 * 60 * 60))
@@ -171,7 +172,7 @@ class BetCreateTest {
         assertEquals("Iowa", fields["Opponent"])
         assertEquals("1", fields["Week"])
         assertEquals("Nebraska", fields["Winner"])
-        assertEquals("Over", fields["Points"])
+        assertEquals("Over", fields["Over/Under"])
         assertEquals("Nebraska", fields["Spread"])
         assertEquals("http://img", embed.thumbnail?.url)
 
@@ -197,6 +198,7 @@ class BetCreateTest {
         `when`(event.getMember()).thenReturn(member)
 
         `when`(event.replyEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(replyEmbedAction)
+        `when`(replyEmbedAction.setEphemeral(true)).thenReturn(replyEmbedAction)
 
         val sched = ScheduleEntity(id = 66, opponent = "Minnesota", opponentLogo = "http://logo2", season = season, week = 1, dateTime = Instant.now().plusSeconds(4 * 60 * 60))
         `when`(scheduleRepo.findBySeasonAndWeek(season, 1)).thenReturn(sched)
@@ -225,7 +227,7 @@ class BetCreateTest {
         assertEquals("Minnesota", fields["Opponent"])
         assertEquals("1", fields["Week"])
         assertEquals("Nebraska", fields["Winner"])
-        assertEquals("Over", fields["Points"])
+        assertEquals("Over", fields["Over/Under"])
         assertEquals("Nebraska", fields["Spread"])
         assertEquals("http://logo2", embed.thumbnail?.url)
 

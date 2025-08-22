@@ -69,7 +69,7 @@ class BetLeaderboard : SlashCommand() {
         val embed = EmbedBuilder()
             .setTitle("🏆 Husker Betting Leaderboard — $season Season")
             .setColor(Color(200, 16, 46)) // Huskers Red-ish
-            .setDescription("Scoring: Winner = 1, Spread = 2, Points = 2")
+            .setDescription("Scoring: Winner = 1, Spread = 2, Over/Under = 2")
 
         // Resolve names and build lines
         val guild = commandEvent.guild
@@ -87,7 +87,7 @@ class BetLeaderboard : SlashCommand() {
                 guild?.retrieveMember(UserSnowflake.fromId(userId))?.complete()?.effectiveName
             } catch (e: Exception) { null } ?: totals.userTag.ifBlank { userId.toString() }
 
-            val breakdown = "W ${totals.winners} • S ${totals.spreads} • P ${totals.overUnders}"
+            val breakdown = "W ${totals.winners} • S ${totals.spreads} • O/U ${totals.overUnders}"
             "$medal $displayName — ${totals.points} pts  ($breakdown)"
         }
 
