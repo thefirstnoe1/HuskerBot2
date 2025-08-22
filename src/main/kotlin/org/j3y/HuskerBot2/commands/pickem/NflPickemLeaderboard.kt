@@ -12,7 +12,8 @@ class NflPickemLeaderboard : SlashCommand() {
 
     @Autowired lateinit var nflPickRepo: NflPickRepo
 
-    override fun getCommandKey(): String = "nfl-pickem-leaderboard"
+    override fun getCommandKey(): String = "leaderboard"
+    override fun isSubcommand(): Boolean = true
     override fun getDescription(): String = "Show the NFL Pick'em leaderboard for the current year."
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {

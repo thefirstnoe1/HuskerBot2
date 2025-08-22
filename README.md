@@ -21,7 +21,7 @@ HuskerBot2 is a Kotlin/Spring Boot Discord bot for Nebraska Cornhuskers fans. It
 ## Tech Stack
 - Kotlin + Spring Boot
 - JDA (Java Discord API)
-- Spring Data JPA with H2 (file-backed) datastore
+- Spring Data JPA with H2 (file-backed) datastore by default; optional MySQL support via Spring profile
 - Gradle build
 
 ## Requirements
@@ -36,6 +36,19 @@ Edit `src/main/resources/application.yml`:
 - Channels and category IDs as needed
 - `cfbd.api-key`: CollegeFootballData API key if you use lines/matchup features
 - Weather and Urban Dictionary settings are already configured with sensible defaults
+
+### Database (H2 or MySQL)
+- Default: H2 file-based database at `~/.discordbot/data`. No extra config needed.
+- MySQL (optional): Enable the MySQL profile and provide connection details via environment variables.
+  - Set `SPRING_PROFILES_ACTIVE=mysql`
+  - Optional env vars (with defaults shown):
+    - `DB_HOST` (default: `localhost`)
+    - `DB_PORT` (default: `3306`)
+    - `DB_NAME` (default: `huskerbot`)
+    - `DB_USER` (default: `husker`)
+    - `DB_PASSWORD` (default: `password`)
+  - The effective JDBC URL is: `jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC`
+- Schema is managed by Hibernate (`spring.jpa.hibernate.ddl-auto=update`) in both profiles by default.
 
 ## Run Locally
 1. Set your configuration in `application.yml`.
