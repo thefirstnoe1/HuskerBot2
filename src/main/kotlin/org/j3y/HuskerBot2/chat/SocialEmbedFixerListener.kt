@@ -18,7 +18,7 @@ class SocialEmbedFixerListener : ListenerAdapter() {
 
         // Ignore bots/system/webhooks and empty messages
         if (author.isBot || author.isSystem || message.isWebhookMessage) return
-        val raw = message.contentRaw ?: return
+        val raw = message.contentRaw
         if (raw.isBlank()) return
 
         try {
