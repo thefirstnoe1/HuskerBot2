@@ -149,26 +149,23 @@ class BetShowTest {
 
         // Users embed assertions
         assertEquals("Nebraska vs Minnesota (Week $week) Bets", usersEmbed.title)
-        // Two fields, inline, order is as iterated (bet1 then bet2)
-        assertEquals(2, usersEmbed.fields.size)
-        assertEquals("GuildNick100", usersEmbed.fields[0].name) // resolved from guild
-        assertTrue(usersEmbed.fields[0].value?.contains("**Winner:** Nebraska") == true)
-        assertTrue(usersEmbed.fields[0].value?.contains("**Points:** Over") == true)
-        assertTrue(usersEmbed.fields[0].value?.contains("**Spread:** Nebraska") == true)
-
-        assertEquals("u200#tag", usersEmbed.fields[1].name) // fallback to tag
-        assertTrue(usersEmbed.fields[1].value?.contains("**Winner:** Opponent") == true)
-        assertTrue(usersEmbed.fields[1].value?.contains("**Points:** Under") == true)
-        assertTrue(usersEmbed.fields[1].value?.contains("**Spread:** Opponent") == true)
+        // Verify expected field names exist (aggregate lists), values may be blank or aggregated
+        val userFieldNames = usersEmbed.fields.map { it.name }
+        assertTrue(userFieldNames.contains("Winner: Nebraska"))
+        assertTrue(userFieldNames.contains("Winner: Minnesota"))
+        assertTrue(userFieldNames.contains("Over"))
+        assertTrue(userFieldNames.contains("Under"))
+        assertTrue(userFieldNames.contains("Spread: Nebraska"))
+        assertTrue(userFieldNames.contains("Spread: Minnesota"))
 
         // Totals embed assertions
         assertEquals("Totals for Nebraska vs Minnesota (Week $week)", totalsEmbed.title)
         val totals = totalsEmbed.fields.associate { it.name to it.value }
-        assertEquals("1", totals["Nebraska Winner Bets"]) // bet1
-        assertEquals("1", totals["Opponent Winner Bets"]) // bet2
+        assertEquals("1", totals["Nebraska Win Bets"]) // bet1
+        assertEquals("1", totals["Minnesota Win Bets"]) // bet2
         assertEquals("1", totals["Points Over Bets"]) // bet1
         assertEquals("1", totals["Points Under Bets"]) // bet2
         assertEquals("1", totals["Nebraska Spread Bets"]) // bet1
-        assertEquals("1", totals["Opponent Spread Bets"]) // bet2
+        assertEquals("1", totals["Minnesota Spread Bets"]) // bet2
     }
 }

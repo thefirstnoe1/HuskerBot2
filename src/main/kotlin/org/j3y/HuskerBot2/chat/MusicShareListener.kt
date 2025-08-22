@@ -80,9 +80,11 @@ class MusicShareListener : ListenerAdapter() {
             links["appleMusic"]?.let {
                 buttons += Button.link(it, "Apple Music")
             }
-            // Prefer youtubeMusic, fall back to youtube
-            (links["youtubeMusic"] ?: links["youtube"])?.let {
+            links["youtubeMusic"]?.let {
                 buttons += Button.link(it, "Youtube Music")
+            }
+            links["youtube"]?.let {
+                buttons += Button.link(it, "Youtube")
             }
 
             // If somehow none of the preferred labels exist, add any others for visibility
