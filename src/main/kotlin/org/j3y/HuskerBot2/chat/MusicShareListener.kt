@@ -50,7 +50,7 @@ class MusicShareListener : ListenerAdapter() {
             val (title, artist, thumb) = extractTitleArtistThumb(odesli)
             val album = extractAlbumName(odesli)
             val links = extractPlatformLinks(odesli)
-            if (links.isEmpty()) return
+            if (links.isEmpty() || links.size <= 1) return
 
             // Suppress embeds on the original message so only our embed shows
             message.suppressEmbeds(true).queue({ /* ok */ }, { ex ->
