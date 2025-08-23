@@ -104,6 +104,21 @@ class NflPickemProcessing {
                     channel.sendMessageEmbeds(embed).setActionRow(buttons).queue()
                 }
             }
+
+            channel.sendMessageEmbeds(
+                EmbedBuilder()
+                    .setTitle("Pick Information")
+                    .setDescription(
+                        """You can change your pick any time before a game starts.
+                        
+                        Click the button below to see your current picks for the week.
+                        You can also use the command `/nfl-pickem show [week<optional>]` to see your picks at any time.
+                        """)
+                    .setColor(Color(0x00, 0x66, 0xCC))
+                    .build()
+            ).addActionRow(
+                Button.primary("nflpickem|mypicks", "View My Picks")
+            ).queue()
         } catch (e: Exception) {
             log.error("Failed to post pick'em", e)
         }

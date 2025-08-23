@@ -2,14 +2,17 @@ package org.j3y.HuskerBot2.automation.pickem.nfl
 
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.components.ActionRow
+import net.dv8tion.jda.api.interactions.components.buttons.Button
+import org.j3y.HuskerBot2.commands.pickem.NflPickemShow
 import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
+import org.j3y.HuskerBot2.util.WeekResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.time.Instant
-import java.time.LocalDate
 
 @Component
 class NflPickemListener : ListenerAdapter() {
@@ -17,11 +20,13 @@ class NflPickemListener : ListenerAdapter() {
 
     @Autowired lateinit var nflGameRepo: NflGameRepo
     @Autowired lateinit var nflPickRepo: NflPickRepo
+    @Autowired lateinit var nflPickemShow: NflPickemShow
 
     override fun onButtonInteraction(event: ButtonInteractionEvent) {
         val id = event.componentId
 
         if (!id.startsWith("nflpickem|")) return
+        if (id == "nflpickem|mypicks") return nflPickemShow.handleEvent(event, WeekResolver.currentNflWeek())
         try {
             val parts = id.split("|")
             if (parts.size < 3) return
@@ -38,8 +43,6 @@ class NflPickemListener : ListenerAdapter() {
                 event.reply("You cannot make a pick after the game has already started!").setEphemeral(true).queue()
                 return
             }
-
-            val pick = if (game.homeTeamId == teamId.toLong()) game.homeTeam else game.awayTeam
 
             val pickEntity = getPick(game.id, event.user.idLong)
             pickEntity.season = game.season
@@ -58,16 +61,14 @@ class NflPickemListener : ListenerAdapter() {
 
             val eventIdStr = game.id.toString()
             val updatedButtons = listOf(
-                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("nflpickem|$eventIdStr|${game.awayTeamId}", awayLabel),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("nflpickem|$eventIdStr|${game.homeTeamId}", homeLabel)
+                Button.primary("nflpickem|$eventIdStr|${game.awayTeamId}", awayLabel),
+                Button.primary("nflpickem|$eventIdStr|${game.homeTeamId}", homeLabel)
             )
 
             // Acknowledge ephemerally and also update the original message's action row
             event.message.editMessageComponents(net.dv8tion.jda.api.interactions.components.ActionRow.of(updatedButtons)).queue()
 
-            event.reply("You picked team $pick for game ${game.awayTeam} @ ${game.homeTeam}. Thanks!")
-                .setEphemeral(true)
-                .queue()
+            event.deferEdit().queue()
         } catch (e: Exception) {
             log.error("Error handling NFL pick'em button", e)
             event.reply("An error occurred processing your pick.").setEphemeral(true).queue()

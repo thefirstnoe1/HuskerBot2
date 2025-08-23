@@ -161,11 +161,11 @@ class BetShowTest {
         // Totals embed assertions
         assertEquals("Totals for Nebraska vs Minnesota (Week $week)", totalsEmbed.title)
         val totals = totalsEmbed.fields.associate { it.name to it.value }
-        assertEquals("1", totals["Nebraska Win Bets"]) // bet1
-        assertEquals("1", totals["Minnesota Win Bets"]) // bet2
-        assertEquals("1", totals["Points Over Bets"]) // bet1
-        assertEquals("1", totals["Points Under Bets"]) // bet2
-        assertEquals("1", totals["Nebraska Spread Bets"]) // bet1
-        assertEquals("1", totals["Minnesota Spread Bets"]) // bet2
+        assertEquals("1", totals["Nebraska Win"]) // bet1
+        assertEquals("1", totals["Minnesota Win"]) // bet2
+        assertEquals("1", totals["Over"]) // bet1
+        assertEquals("1", totals["Under"]) // bet2
+        assertEquals("1", totals["Nebraska Spread"]) // bet1
+        assertEquals("1", totals["Minnesota Spread"]) // bet2
     }
 }
