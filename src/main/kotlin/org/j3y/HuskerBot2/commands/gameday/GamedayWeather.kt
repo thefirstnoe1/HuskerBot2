@@ -41,7 +41,7 @@ class GamedayWeather : SlashCommand() {
             }
             
             if (!isGameWithinWeek(nextGame.dateTime)) {
-                commandEvent.hook.sendMessage("Game is beyond 7-day weather forecast range.").queue()
+                commandEvent.hook.sendMessage("Game is beyond 14-day weather forecast range.").queue()
                 return
             }
             
@@ -91,7 +91,7 @@ class GamedayWeather : SlashCommand() {
         val gameDate = LocalDateTime.ofInstant(gameDateTime, ZoneId.systemDefault())
         val now = LocalDateTime.now()
         val daysUntilGame = ChronoUnit.DAYS.between(now, gameDate)
-        return daysUntilGame <= 7 && daysUntilGame >= 0
+        return daysUntilGame <= 14 && daysUntilGame >= 0
     }
     
     private fun getGameLocation(scheduleEntity: ScheduleEntity): String {
@@ -132,12 +132,21 @@ class GamedayWeather : SlashCommand() {
             weather.humidity?.let { 
                 embed.addField("🌧️ Precipitation", it, true) 
             }
+            weather.precipitationProbability?.let {
+                embed.addField("☔ Rain Chance", "${it}%", true)
+            }
+            
+            // Add snarky description if available
+            weather.snarkyDescription?.let {
+                embed.addField("🔥 Forecast Hot Take", it, false)
+            }
+            
             embed.addField("📋 Detailed Forecast", weather.detailedForecast, false)
         } else {
             embed.addField("⚠️ Weather", "Weather data unavailable", false)
         }
         
-        embed.setFooter("Weather data from National Weather Service")
+        embed.setFooter("Weather data from Tomorrow.io & National Weather Service")
         embed.setTimestamp(Instant.now())
         
         return embed.build()

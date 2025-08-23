@@ -43,9 +43,12 @@ weather:
   nws:
     base-url: "https://api.weather.gov"
     user-agent: "HuskerBot2 (huskerbot@example.com)"
+  tomorrow:
+    base-url: "https://api.tomorrow.io/v4"
+    api-key: ""
   cache:
     coordinates-ttl: 86400
-    forecast-ttl: 1800
+    forecast-ttl: 3600
 
 cfbd:
   base-url: "https://api.collegefootballdata.com"
