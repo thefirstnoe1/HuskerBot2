@@ -17,7 +17,6 @@ import org.j3y.HuskerBot2.util.WeekResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.scheduling.annotation.Scheduled
 import java.awt.Color
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -35,8 +34,7 @@ class NflPickemProcessing {
     @Autowired lateinit var nflGameRepo: NflGameRepo
     @Value("\${discord.channels.nfl-pickem}") lateinit var pickemChannelId: String
 
-    // Every Tuesday at 2:00 AM Central
-    @Scheduled(cron = "0 0 2 * * TUE", zone = "America/Chicago")
+    // Every Tuesday at 2:00 AM Central (db-scheduler recurring task configured)
     fun postWeeklyPickem() {
         processPreviousWeek()
         deleteAllPosts()
