@@ -19,7 +19,7 @@ spring:
       path: /h2-console
 
 discord:
-  token: ""
+  token: ${DISCORD-TOKEN:}
 
   guilds:
     - 1407527947761488085 # Husker Bot Test Discord
@@ -50,7 +50,7 @@ weather:
 cfbd:
   base-url: "https://api.collegefootballdata.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
-  api-key: ""
+  api-key: ${CFBD-KEY:}
   cache:
     matchup-ttl: 3600
 
@@ -61,7 +61,7 @@ urban:
 gemini:
   base-url: "https://generativelanguage.googleapis.com"
   model: "models/gemini-2.5-flash"
-  api-key: ""
+  api-key: ${GEMINI-KEY:}
 
 ---
 # Activate this block by setting SPRING_PROFILES_ACTIVE=mysql
