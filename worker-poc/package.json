@@ -1,0 +1,13 @@
+{
+  "name": "huskerbot-worker",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm run build:kotlin && npm run build:worker",
+    "build:kotlin": "cd .. && ./gradlew :worker-poc:wasmJsBrowserDistribution",
+    "build:worker": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

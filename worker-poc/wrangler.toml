@@ -1,0 +1,22 @@
+name = "huskerbot-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "worker-test"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "huskerbot-db"
+database_id = "your-database-id-here"
+
+# KV for caching (weather, etc.)
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id-here"
+
+# Secrets for API keys
+# Set with: wrangler secret put DISCORD_TOKEN
+# Set with: wrangler secret put TOMORROW_API_KEY
+# Set with: wrangler secret put GEMINI_API_KEY
