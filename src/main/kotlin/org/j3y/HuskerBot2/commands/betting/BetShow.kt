@@ -44,11 +44,12 @@ class BetShow : SlashCommand() {
 
         val sched = scheduleRepo.findBySeasonAndWeek(season, week)
         val bets = betRepo.findBySeasonAndWeek(season, week)
+        val opponent = sched?.opponent ?: "Opponent"
         val embedUsers = EmbedBuilder()
-            .setTitle("Nebraska vs ${sched?.opponent} (Week $week) Bets")
+            .setTitle("Nebraska vs $opponent (Week $week) Bets")
             .setColor(Color.RED)
         val embedTotals = EmbedBuilder()
-            .setTitle("Totals for Nebraska vs ${sched?.opponent} (Week $week)")
+            .setTitle("Totals for Nebraska vs $opponent (Week $week)")
             .setColor(Color.RED)
 
         if (bets.isEmpty()) {
@@ -56,27 +57,57 @@ class BetShow : SlashCommand() {
             commandEvent.replyEmbeds(embedUsers.build()).queue()
             return
         } else {
-            val winnerBets = mutableMapOf("Nebraska" to 0, "Opponent" to 0)
-            val pointsBets = mutableMapOf("Over" to 0, "Under" to 0)
-            val spreadBets = mutableMapOf("Nebraska" to 0, "Opponent" to 0)
+            val winnerUserChoices: Map<String, MutableList<String>> = mapOf(
+                "Nebraska" to mutableListOf(),
+                "Opponent" to mutableListOf()
+            )
+            val pointsUserChoices: Map<String, MutableList<String>> = mapOf(
+                "Over" to mutableListOf(),
+                "Under" to mutableListOf(),
+            )
+            val spreadUserChoices: Map<String, MutableList<String>> = mapOf(
+                "Nebraska" to mutableListOf(),
+                "Opponent" to mutableListOf()
+            )
             bets.forEach { bet ->
-                val user = commandEvent.guild?.retrieveMember(UserSnowflake.fromId(bet.userId))?.complete()?.effectiveName ?: bet.userTag
-                embedUsers.addField(user, "**Winner:** ${bet.winner}\n**Points:** ${bet.predictPoints}\n**Spread:** ${bet.predictSpread}", true)
-
-                winnerBets[bet.winner] = winnerBets[bet.winner]!! + 1
-                pointsBets[bet.predictPoints] = pointsBets[bet.predictPoints]!! + 1
-                spreadBets[bet.predictSpread] = spreadBets[bet.predictSpread]!! + 1
+                var user: String
+                try {
+                    user = commandEvent.guild?.retrieveMember(UserSnowflake.fromId(bet.userId))?.complete()?.effectiveName ?: bet.userTag
+                } catch (e: Exception) {
+                    log.warn("Couldn't find member for tag: {}", bet.userTag)
+                    user = bet.userTag
+                }
+                log.info("Found bet for user: {} - {} - {}", user, bet.userTag, bet.userId)
+                winnerUserChoices[bet.winner]?.add(user)
+                pointsUserChoices[bet.predictPoints]?.add(user)
+                spreadUserChoices[bet.predictSpread]?.add(user)
             }
 
-            embedTotals.addField("Nebraska Winner Bets", winnerBets["Nebraska"].toString(), true)
-            embedTotals.addField("Opponent Winner Bets", winnerBets["Opponent"].toString(), true)
+            embedTotals.addField("Nebraska Win", winnerUserChoices["Nebraska"]?.size.toString(), true)
+            embedTotals.addField("$opponent Win", winnerUserChoices["Opponent"]?.size.toString(), true)
             embedTotals.addBlankField(true)
-            embedTotals.addField("Points Over Bets", pointsBets["Over"].toString(), true)
-            embedTotals.addField("Points Under Bets", pointsBets["Under"].toString(), true)
+            embedTotals.addField("Over", pointsUserChoices["Over"]?.size.toString(), true)
+            embedTotals.addField("Under", pointsUserChoices["Under"]?.size.toString(), true)
             embedTotals.addBlankField(true)
-            embedTotals.addField("Nebraska Spread Bets", spreadBets["Nebraska"].toString(), true)
-            embedTotals.addField("Opponent Spread Bets", spreadBets["Opponent"].toString(), true)
+            embedTotals.addField("Nebraska Spread", spreadUserChoices["Nebraska"]?.size.toString(), true)
+            embedTotals.addField("$opponent Spread", spreadUserChoices["Opponent"]?.size.toString(), true)
             embedTotals.addBlankField(true)
+
+            winnerUserChoices.values.forEach { value -> if (value.isEmpty()) value.add("None") }
+            pointsUserChoices.values.forEach { value -> if (value.isEmpty()) value.add("None") }
+            spreadUserChoices.values.forEach { value -> if (value.isEmpty()) value.add("None") }
+
+            embedUsers.addField("Winner: Nebraska", winnerUserChoices["Nebraska"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addField("Winner: $opponent", winnerUserChoices["Opponent"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addBlankField(true)
+
+            embedUsers.addField("Over", pointsUserChoices["Over"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addField("Under", pointsUserChoices["Under"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addBlankField(true)
+
+            embedUsers.addField("Spread: Nebraska", spreadUserChoices["Nebraska"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addField("Spread: $opponent", spreadUserChoices["Opponent"]?.joinToString(", ") ?: "None", true)
+            embedUsers.addBlankField(true)
         }
         commandEvent.replyEmbeds(embedUsers.build(), embedTotals.build()).queue()
     }

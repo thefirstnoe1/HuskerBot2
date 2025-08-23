@@ -58,6 +58,11 @@ urban:
   base-url: "https://api.urbandictionary.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
 
+gemini:
+  base-url: "https://generativelanguage.googleapis.com"
+  model: "models/gemini-2.5-flash"
+  api-key: ""
+
 ---
 # Activate this block by setting SPRING_PROFILES_ACTIVE=mysql
 spring:

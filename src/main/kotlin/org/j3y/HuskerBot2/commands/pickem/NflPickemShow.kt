@@ -2,7 +2,10 @@ package org.j3y.HuskerBot2.commands.pickem
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -36,16 +39,20 @@ class NflPickemShow : SlashCommand() {
         }
 
         return listOf(
-            OptionData(OptionType.USER, "user", "The user to lookup.", true),
-            OptionData(OptionType.INTEGER, "week", "NFL week number.", true).addChoices(weekChoices)
+            OptionData(OptionType.INTEGER, "week", "NFL week number. Default is current NFL week.", false).addChoices(weekChoices)
         )
     }
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        commandEvent.deferReply().queue()
+        val week = commandEvent.getOption("week")?.asInt ?: WeekResolver.currentNflWeek()
+        handleEvent(commandEvent, week)
+    }
+
+    fun handleEvent(commandEvent: IReplyCallback, week: Int) {
+        commandEvent.deferReply(true).queue()
         try {
-            val targetUser: User = commandEvent.getOption("user")!!.asUser
-            val week = commandEvent.getOption("week")!!.asInt
+            val targetUser: User = commandEvent.user
+
             val season = LocalDate.now().year
 
             val picks = try { nflPickRepo.findByUserIdAndSeasonAndWeek(targetUser.idLong, season, week) } catch (e: Exception) { emptyList() }
@@ -71,15 +78,16 @@ class NflPickemShow : SlashCommand() {
                 if (game == null) {
                     sb.append("Game ${pick.gameId}: Picked team ${pick.winningTeamId}" )
                 } else {
-                    val matchup = "${game.awayTeam} @ ${game.homeTeam}"
-                    val pickedTeam = if (pick.winningTeamId == game.homeTeamId) game.homeTeam else if (pick.winningTeamId == game.awayTeamId) game.awayTeam else "Unknown"
+                    val awayTeam = (if (game.awayTeamId == pick.winningTeamId) "☑\uFE0F" else "❌") + " ${game.awayTeam}"
+                    val homeTeam = "${game.homeTeam} " + (if (game.homeTeamId == pick.winningTeamId) "☑\uFE0F" else "❌")
+                    val matchup = "$awayTeam @ $homeTeam"
                     if (allProcessed) {
                         val correct = pick.correctPick
                         if (correct) correctCount++
                         val mark = if (correct) "✅" else "❌"
-                        sb.append("$mark $matchup — Pick: $pickedTeam\n")
+                        sb.append("$matchup — Correct?: $mark\n")
                     } else {
-                        sb.append("• $matchup — Pick: $pickedTeam\n")
+                        sb.append("$matchup\n")
                     }
                 }
             }

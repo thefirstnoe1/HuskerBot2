@@ -1,7 +1,6 @@
 package org.j3y.HuskerBot2.commands.betting
 
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -76,10 +75,8 @@ class BetCreate : SlashCommand() {
 
         if (betOpt.isPresent) {
             bet = betOpt.get()
-            log.info("Found Existing Bet: {} - {} - {}", bet.userId, bet.season, bet.week)
             isUpdate = true
         } else {
-            log.info("Creating new bet for {} - {} - {}", userId, season, week)
             bet = BetEntity(userId, season, week)
         }
 
@@ -99,10 +96,10 @@ class BetCreate : SlashCommand() {
                 .addField("Week", week.toString(), true)
                 .addBlankField(true)
                 .addField("Winner", winner, true)
-                .addField("Points", predictPoints, true)
+                .addField("Over/Under", predictPoints, true)
                 .addField("Spread", predictSpread, true)
                 .setThumbnail(sched.opponentLogo)
                 .build()
-        ).queue()
+        ).setEphemeral(true).queue()
     }
 }
