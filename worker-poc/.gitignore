@@ -1,0 +1,4 @@
+node_modules/
+build/
+*.lock
+kotlin-js-store/

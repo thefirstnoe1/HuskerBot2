@@ -16,7 +16,7 @@ kotlin {
     sourceSets {
         val wasmJsMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                // Removed coroutines for now - not yet supported in Kotlin/Wasm
             }
         }
     }

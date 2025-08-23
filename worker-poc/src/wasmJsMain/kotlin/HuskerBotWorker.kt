@@ -1,127 +1,55 @@
-// External JavaScript function declarations for Worker environment
-external interface Request {
-    val method: String
-    val url: String
-    fun json(): dynamic
-}
+// Simple Kotlin/Wasm Discord bot POC
+// Note: Kotlin/Wasm has significant limitations - this is a minimal demonstration
 
-external interface Response {
-    companion object {
-        fun Response(body: String, options: dynamic = definedExternally): Response
-    }
-}
+// External JavaScript function declarations (simplified)
+external fun processRequest(method: String, url: String): String
 
-external interface ExecutionContext
-
-// Simplified Discord interaction types
-data class DiscordInteraction(
+// Simplified data classes for Discord interactions
+data class SimpleDiscordResponse(
     val type: Int,
-    val data: DiscordInteractionData?
-)
-
-data class DiscordInteractionData(
-    val name: String,
-    val options: List<DiscordOption>?
-)
-
-data class DiscordOption(
-    val name: String,
-    val value: String
-)
-
-// Simple response builder
-data class DiscordResponse(
-    val type: Int,
-    val data: DiscordResponseData?
-)
-
-data class DiscordResponseData(
     val content: String
 )
 
 class HuskerBotWorker {
-    fun handleRequest(request: Request, context: ExecutionContext): Response {
-        return when (request.method) {
-            "POST" -> handleDiscordInteraction(request)
-            "GET" -> handleHealthCheck()
-            else -> Response("Method not allowed", js("{ status: 405 }"))
-        }
-    }
     
-    private fun handleDiscordInteraction(request: Request): Response {
-        try {
-            // Parse Discord interaction
-            val interaction = parseDiscordInteraction(request)
-            
-            val response = when (interaction.type) {
-                1 -> handlePing()
-                2 -> handleSlashCommand(interaction)
-                else -> DiscordResponse(4, DiscordResponseData("Unknown interaction type"))
-            }
-            
-            return Response(
-                JSON.stringify(response),
-                js("{ headers: { 'Content-Type': 'application/json' } }")
-            )
-        } catch (e: Exception) {
-            return Response(
-                "Internal Server Error",
-                js("{ status: 500 }")
-            )
-        }
-    }
-    
-    private fun parseDiscordInteraction(request: Request): DiscordInteraction {
-        val body = request.json()
-        return DiscordInteraction(
-            type = body.type as Int,
-            data = body.data?.let { data ->
-                DiscordInteractionData(
-                    name = data.name as String,
-                    options = (data.options as? Array<dynamic>)?.map { option ->
-                        DiscordOption(
-                            name = option.name as String,
-                            value = option.value as String
-                        )
-                    }
-                )
-            }
-        )
-    }
-    
-    private fun handlePing(): DiscordResponse {
-        return DiscordResponse(1, null) // PONG
-    }
-    
-    private fun handleSlashCommand(interaction: DiscordInteraction): DiscordResponse {
-        val commandName = interaction.data?.name ?: "unknown"
-        
+    fun handleDiscordInteraction(commandName: String): String {
         return when (commandName) {
-            "gameday-weather" -> handleGamedayWeather()
-            "ping" -> DiscordResponse(4, DiscordResponseData("Pong! HuskerBot is running on Cloudflare Workers! 🚀"))
-            else -> DiscordResponse(4, DiscordResponseData("Unknown command: $commandName"))
+            "ping" -> createResponse(4, "Pong! HuskerBot is running on Cloudflare Workers! 🚀")
+            "gameday-weather" -> createResponse(4, getGamedayWeatherResponse())
+            else -> createResponse(4, "Unknown command: $commandName")
         }
     }
     
-    private fun handleGamedayWeather(): DiscordResponse {
-        // Simplified weather response for POC
-        return DiscordResponse(
-            4,
-            DiscordResponseData("🏈 **Game Day Weather POC**\n\n🌡️ 72°F\n☁️ Partly Cloudy\n💨 10 mph NW\n\n🔥 **Hot Take**: Perfect football weather! Even if we're losing, at least you won't freeze your corn-fed butt off in Memorial Stadium! 🌽")
-        )
+    private fun createResponse(type: Int, content: String): String {
+        // Manual JSON creation since JSON.stringify isn't available
+        return """{"type":$type,"data":{"content":"$content"}}"""
     }
     
-    private fun handleHealthCheck(): Response {
-        return Response(
-            "HuskerBot Worker is healthy! 🌽",
-            js("{ headers: { 'Content-Type': 'text/plain' } }")
-        )
+    private fun getGamedayWeatherResponse(): String {
+        return buildString {
+            append("🏈 **Game Day Weather POC**\\n\\n")
+            append("🌡️ 72°F\\n")
+            append("☁️ Partly Cloudy\\n") 
+            append("💨 10 mph NW\\n\\n")
+            append("🔥 **Hot Take**: Perfect football weather! ")
+            append("Even if we're losing, at least you won't freeze your ")
+            append("corn-fed butt off in Memorial Stadium! 🌽")
+        }
+    }
+    
+    fun getHealthCheck(): String {
+        return "HuskerBot Worker is healthy! 🌽"
     }
 }
 
-// Entry point for the Worker
+// Entry point for the Worker (simplified)
 @JsExport
-fun handleRequest(request: Request, env: dynamic, context: ExecutionContext): Response {
+fun handleWorkerRequest(method: String, command: String): String {
     val worker = HuskerBotWorker()
-    return worker.handleRequest(request, context)
+    
+    return when (method) {
+        "POST" -> worker.handleDiscordInteraction(command)
+        "GET" -> worker.getHealthCheck()
+        else -> "Method not allowed"
+    }
 }
