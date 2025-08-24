@@ -2,6 +2,7 @@ package org.j3y.HuskerBot2
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import jakarta.annotation.PostConstruct
+import org.j3y.HuskerBot2.automation.backup.DatabaseBackupService
 import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.HuskersDotComService
@@ -14,6 +15,8 @@ import java.time.LocalDate
 
 @Component
 class StartupSchedulePopulate {
+    @Autowired(required = false)
+    private var databaseBackupService: DatabaseBackupService? = null
     private val log = LoggerFactory.getLogger(StartupSchedulePopulate::class.java)
 
     @Autowired private lateinit var scheduleRepo: ScheduleRepo
@@ -48,5 +51,7 @@ class StartupSchedulePopulate {
 
             scheduleRepo.save(sched)
         }
+
+        databaseBackupService?.runBackup()
     }
 }
