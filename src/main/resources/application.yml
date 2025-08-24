@@ -57,6 +57,10 @@ urban:
   base-url: "https://api.urbandictionary.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
 
+backup:
+  sql:
+    dir: build/backups-sql
+
 gemini:
   base-url: "https://generativelanguage.googleapis.com"
   model: "models/gemini-2.5-flash"
