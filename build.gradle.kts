@@ -25,6 +25,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+	implementation("com.github.kagkarlsson:db-scheduler-spring-boot-starter:15.6+")
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	implementation("net.dv8tion:JDA:5.6.+")
 	implementation("org.apache.httpcomponents.client5:httpclient5:5.+")
