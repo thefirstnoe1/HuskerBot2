@@ -4,6 +4,7 @@ import com.github.kagkarlsson.scheduler.task.Task
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import com.github.kagkarlsson.scheduler.task.schedule.CronSchedule
 import org.j3y.HuskerBot2.automation.betting.BetProcessing
+import org.j3y.HuskerBot2.automation.backup.DatabaseBackupService
 import org.j3y.HuskerBot2.automation.pickem.nfl.NflPickemProcessing
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
@@ -32,6 +33,17 @@ class AutomationSchedulerConfig {
             .execute { _, _ ->
                 log.info("Running recurring task: nfl-pickem-post-weekly")
                 nflPickemProcessing.postWeeklyPickem()
+            }
+    }
+
+    @Bean
+    fun databaseBackupHourlyTask(@Lazy databaseBackupService: DatabaseBackupService): Task<Void> {
+        // Run at the top of every hour in America/Chicago timezone
+        val schedule = CronSchedule("0 0 * * * *", ZoneId.of("America/Chicago"))
+        return Tasks.recurring("database-backup-hourly", schedule)
+            .execute { _, _ ->
+                log.info("Running recurring task: database-backup-hourly")
+                databaseBackupService.runBackup()
             }
     }
 }
