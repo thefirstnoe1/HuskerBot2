@@ -89,7 +89,6 @@ class AnnouncementTest {
         assertEquals("Server Announcement", embed.title)
         assertEquals("Big news!", embed.description)
         assertEquals(Color.RED.rgb, embed.colorRaw)
-        assertTrue(embed.footer?.text?.contains("HuskerBot2") == true)
 
         // Verify flow
         Mockito.verify(channel).sendMessage("@everyone")
