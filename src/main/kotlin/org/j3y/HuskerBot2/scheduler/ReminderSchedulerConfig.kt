@@ -71,6 +71,6 @@ class ReminderService(
         val payload = ReminderSchedulerConfig.ReminderPayload(channelId, userId, message)
         val taskInstance = reminderTask.instance(instanceId, payload)
         log.info("Scheduling reminder for channel {} at {}", channelId, executionTime)
-        schedulerClient.schedule(taskInstance, executionTime)
+        schedulerClient.scheduleIfNotExists(taskInstance, executionTime)
     }
 }
