@@ -258,8 +258,8 @@ class NflPickemProcessingTest {
         assertTrue(id1!!.startsWith("nflpickem|2002|"))
         val labels = buttons.map { it.label }
         // We expect counts (away DAL=2, home SF=1) somewhere in labels
-        assertTrue(labels.any { it?.contains("(2)") == true })
-        assertTrue(labels.any { it?.contains("(1)") == true })
+        assertTrue(labels.any { it.contains("(2)") })
+        assertTrue(labels.any { it.contains("(1)") })
 
         // Verify informational embed was posted as well
         Mockito.verify(ch.channel, Mockito.atLeastOnce()).sendMessageEmbeds(Mockito.any(MessageEmbed::class.java))
