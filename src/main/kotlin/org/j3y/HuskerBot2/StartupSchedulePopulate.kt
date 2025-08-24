@@ -15,8 +15,8 @@ import java.time.LocalDate
 
 @Component
 class StartupSchedulePopulate {
-    @Autowired
-    private lateinit var databaseBackupService: DatabaseBackupService
+    @Autowired(required = false)
+    private var databaseBackupService: DatabaseBackupService? = null
     private val log = LoggerFactory.getLogger(StartupSchedulePopulate::class.java)
 
     @Autowired private lateinit var scheduleRepo: ScheduleRepo
@@ -52,6 +52,6 @@ class StartupSchedulePopulate {
             scheduleRepo.save(sched)
         }
 
-        databaseBackupService.runBackup()
+        databaseBackupService?.runBackup()
     }
 }
