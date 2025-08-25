@@ -12,26 +12,50 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.awt.Color
+import java.io.File
 
 @Component
 class Announcement : SlashCommand() {
     @Value("\${discord.channels.announcements}") lateinit var announcementsChannelId: String
+    @Value("\${text-file-directory:}") lateinit var textFileDirectory: String
 
     override fun getCommandKey(): String = "announcement"
     override fun getDescription(): String = "Send an announcement to the configured announcements channel."
     override fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE)
 
     override fun getOptions(): List<OptionData> = listOf(
-        OptionData(OptionType.STRING, "message", "The announcement message", true)
+        OptionData(OptionType.STRING, "message", "The announcement message", false),
+        OptionData(OptionType.STRING, "text-file", "A text file to load the message from", false)
     )
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        val message = commandEvent.getOption("message")?.asString ?: ""
+        var message = commandEvent.getOption("message")?.asString ?: ""
+        val textFile = commandEvent.getOption("text-file")?.asString ?: ""
 
         val channel: TextChannel? = commandEvent.jda.getTextChannelById(announcementsChannelId)
         if (channel == null) {
             commandEvent.reply("Announcement channel not found.").setEphemeral(true).queue()
             return
+        }
+
+        if (message.isBlank() && textFile.isBlank()) {
+            commandEvent.reply("Message or text file must be provided.").setEphemeral(true).queue()
+            return
+        }
+
+        if (!textFile.isBlank()) {
+            try {
+                var dir = textFileDirectory
+                if (!dir.endsWith("/")) {
+                    dir = "$dir/"
+                }
+
+                val file = File(dir + textFile)
+                message = file.readText()
+            } catch (e: Throwable) {
+                commandEvent.reply("Unable to read text file: ${e.message}").setEphemeral(true).queue()
+                return
+            }
         }
 
         val embed = EmbedBuilder()
