@@ -75,7 +75,7 @@ class WeatherService(
             val timeline = if (hoursUntilGame <= 120) "hourly" else "daily"
             val fields = "temperature,windSpeed,windDirection,humidity,precipitationProbability,weatherCode"
             
-            val url = "$tomorrowBaseUrl/weather/forecast?location=$latitude,$longitude&apikey=$tomorrowApiKey&timesteps=${timeline}&fields=$fields"
+            val url = "$tomorrowBaseUrl/weather/forecast?location=$latitude,$longitude&apikey=$tomorrowApiKey&timesteps=${timeline}&fields=$fields&units=imperial"
             
             val response = restTemplate.exchange(
                 url,
@@ -144,14 +144,17 @@ class WeatherService(
         
         return closestEntry?.let { entry ->
             val values = entry.values
+            val tempF = values.temperature?.roundToInt() ?: 0
+            val tempK = ((tempF - 32) * 5.0 / 9.0 + 273.15).roundToInt()
             WeatherForecast(
-                temperature = values.temperature?.roundToInt() ?: 0,
+                temperature = tempF,
                 shortForecast = getWeatherCodeDescription(values.weatherCode ?: 0),
                 detailedForecast = createDetailedForecast(values),
                 windSpeed = "${values.windSpeed?.roundToInt() ?: 0} mph",
                 windDirection = getWindDirection(values.windDirection ?: 0.0),
                 humidity = values.humidity?.let { "${it.roundToInt()}% humidity" },
-                precipitationProbability = values.precipitationProbability?.roundToInt()
+                precipitationProbability = values.precipitationProbability?.roundToInt(),
+                micksTemp = "${tempK}K"
             )
         }
     }
@@ -171,13 +174,16 @@ class WeatherService(
                         val periodEnd = java.time.Instant.parse(endTime).atZone(ZoneId.of("America/Chicago"))
                         
                         if (targetZoned.isAfter(periodStart) && targetZoned.isBefore(periodEnd)) {
+                            val tempF = period.get("temperature")?.asInt() ?: 0
+                            val tempK = ((tempF - 32) * 5.0 / 9.0 + 273.15).roundToInt()
                             return WeatherForecast(
-                                temperature = period.get("temperature")?.asInt() ?: 0,
+                                temperature = tempF,
                                 shortForecast = period.get("shortForecast")?.asText() ?: "Unknown",
                                 detailedForecast = period.get("detailedForecast")?.asText() ?: "No details available",
                                 windSpeed = period.get("windSpeed")?.asText() ?: "Unknown",
                                 windDirection = period.get("windDirection")?.asText() ?: "Unknown",
-                                humidity = period.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" }
+                                humidity = period.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" },
+                                micksTemp = "${tempK}K"
                             )
                         }
                     }
@@ -186,14 +192,17 @@ class WeatherService(
                 // Fallback to first period
                 if (periods.size() > 0) {
                     val firstPeriod = periods.get(0)
+                    val tempF = firstPeriod.get("temperature")?.asInt() ?: 0
+                    val tempK = ((tempF - 32) * 5.0 / 9.0 + 273.15).roundToInt()
                     log.info("Using first available NWS forecast period as fallback")
                     return WeatherForecast(
-                        temperature = firstPeriod.get("temperature")?.asInt() ?: 0,
+                        temperature = tempF,
                         shortForecast = firstPeriod.get("shortForecast")?.asText() ?: "Unknown",
                         detailedForecast = firstPeriod.get("detailedForecast")?.asText() ?: "No details available",
                         windSpeed = firstPeriod.get("windSpeed")?.asText() ?: "Unknown",
                         windDirection = firstPeriod.get("windDirection")?.asText() ?: "Unknown",
-                        humidity = firstPeriod.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" }
+                        humidity = firstPeriod.get("probabilityOfPrecipitation")?.get("value")?.asText()?.let { "${it}% chance of precipitation" },
+                        micksTemp = "${tempK}K"
                     )
                 }
             }

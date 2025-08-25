@@ -127,6 +127,9 @@ class GamedayWeather : SlashCommand() {
         
         if (weather != null) {
             embed.addField("🌡️ Temperature", "${weather.temperature}°F", true)
+            weather.micksTemp?.let {
+                embed.addField("🌡️ Micks Temp", it, true)
+            }
             embed.addField("☁️ Conditions", weather.shortForecast, true)
             embed.addField("💨 Wind", "${weather.windSpeed} ${weather.windDirection}", true)
             weather.humidity?.let { 

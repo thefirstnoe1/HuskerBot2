@@ -8,7 +8,8 @@ data class WeatherForecast(
     val windDirection: String,
     val humidity: String?,
     val precipitationProbability: Int? = null,
-    val snarkyDescription: String? = null
+    val snarkyDescription: String? = null,
+    val micksTemp: String? = null
 )
 
 data class GeocodingResult(
