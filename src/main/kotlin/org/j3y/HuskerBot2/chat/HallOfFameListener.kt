@@ -73,7 +73,7 @@ class HallOfFameListener(
         }
         
         val embed = EmbedBuilder()
-            .setColor(Color.GOLD)
+            .setColor(Color.ORANGE)
             .setTitle("🏆 Hall of Fame")
             .setDescription("A message has reached the hall of fame!")
             .addField("Author", message.author.asMention, true)
@@ -86,8 +86,8 @@ class HallOfFameListener(
             .build()
         
         hallOfFameChannel.sendMessageEmbeds(embed).queue(
-            { log.info("Message forwarded to Hall of Fame: ${message.jumpUrl}") },
-            { ex -> log.error("Failed to forward message to Hall of Fame", ex) }
+            { _: net.dv8tion.jda.api.entities.Message -> log.info("Message forwarded to Hall of Fame: ${message.jumpUrl}") },
+            { ex: Throwable -> log.error("Failed to forward message to Hall of Fame", ex) }
         )
     }
     
@@ -114,8 +114,8 @@ class HallOfFameListener(
             .build()
         
         hallOfShameChannel.sendMessageEmbeds(embed).queue(
-            { log.info("Message forwarded to Hall of Shame: ${message.jumpUrl}") },
-            { ex -> log.error("Failed to forward message to Hall of Shame", ex) }
+            { _: net.dv8tion.jda.api.entities.Message -> log.info("Message forwarded to Hall of Shame: ${message.jumpUrl}") },
+            { ex: Throwable -> log.error("Failed to forward message to Hall of Shame", ex) }
         )
     }
 }
