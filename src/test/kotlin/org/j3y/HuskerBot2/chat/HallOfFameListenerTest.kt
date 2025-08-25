@@ -2,7 +2,8 @@ package org.j3y.HuskerBot2.chat
 
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.emoji.Emoji
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
+import net.dv8tion.jda.api.entities.emoji.EmojiUnion
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.requests.RestAction
 import org.junit.jupiter.api.BeforeEach
@@ -27,7 +28,7 @@ class HallOfFameListenerTest {
         val message = mock(Message::class.java, RETURNS_DEEP_STUBS)
         val guild = mock(Guild::class.java)
         val user = mock(User::class.java)
-        val messageChannel = mock(MessageChannel::class.java)
+        val messageChannel = mock(MessageChannelUnion::class.java)
         val retrieveAction = mock(RestAction::class.java) as RestAction<Message>
         
         `when`(event.user).thenReturn(user)
@@ -53,7 +54,7 @@ class HallOfFameListenerTest {
     
     private fun createReaction(emojiName: String, count: Int): MessageReaction {
         val reaction = mock(MessageReaction::class.java)
-        val emoji = mock(Emoji::class.java)
+        val emoji = mock(EmojiUnion::class.java)
         
         `when`(reaction.emoji).thenReturn(emoji)
         `when`(reaction.count).thenReturn(count)
@@ -88,14 +89,14 @@ class HallOfFameListenerTest {
         val sendAction = mock(RestAction::class.java) as RestAction<Message>
         
         `when`(guild.getTextChannelById(hallOfFameChannelId)).thenReturn(hallOfFameChannel)
-        `when`(hallOfFameChannel.sendMessageEmbeds(any())).thenReturn(sendAction)
+        `when`(hallOfFameChannel.sendMessageEmbeds(any<MessageEmbed>())).thenReturn(sendAction)
         `when`(sendAction.queue(any(), any())).then { }
         
         assertDoesNotThrow {
             listener.onMessageReactionAdd(event)
         }
         
-        verify(hallOfFameChannel).sendMessageEmbeds(any())
+        verify(hallOfFameChannel).sendMessageEmbeds(any<MessageEmbed>())
     }
     
     @Test
@@ -107,14 +108,14 @@ class HallOfFameListenerTest {
         val sendAction = mock(RestAction::class.java) as RestAction<Message>
         
         `when`(guild.getTextChannelById(hallOfShameChannelId)).thenReturn(hallOfShameChannel)
-        `when`(hallOfShameChannel.sendMessageEmbeds(any())).thenReturn(sendAction)
+        `when`(hallOfShameChannel.sendMessageEmbeds(any<MessageEmbed>())).thenReturn(sendAction)
         `when`(sendAction.queue(any(), any())).then { }
         
         assertDoesNotThrow {
             listener.onMessageReactionAdd(event)
         }
         
-        verify(hallOfShameChannel).sendMessageEmbeds(any())
+        verify(hallOfShameChannel).sendMessageEmbeds(any<MessageEmbed>())
     }
     
     @Test
@@ -132,8 +133,8 @@ class HallOfFameListenerTest {
             listener.onMessageReactionAdd(event)
         }
         
-        verify(hallOfFameChannel, never()).sendMessageEmbeds(any())
-        verify(hallOfShameChannel, never()).sendMessageEmbeds(any())
+        verify(hallOfFameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
+        verify(hallOfShameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
     }
     
     @Test
@@ -141,7 +142,7 @@ class HallOfFameListenerTest {
         val reaction = createReaction("fire", 10)
         val (event, _, guild) = createEventWithReactions(reactions = listOf(reaction))
         
-        `when`(guild.getTextChannelById(any())).thenReturn(null)
+        `when`(guild.getTextChannelById(anyString())).thenReturn(null)
         
         assertDoesNotThrow {
             listener.onMessageReactionAdd(event)
@@ -171,14 +172,14 @@ class HallOfFameListenerTest {
         
         `when`(guild.getTextChannelById(hallOfFameChannelId)).thenReturn(hallOfFameChannel)
         `when`(guild.getTextChannelById(hallOfShameChannelId)).thenReturn(hallOfShameChannel)
-        `when`(hallOfShameChannel.sendMessageEmbeds(any())).thenReturn(sendAction)
+        `when`(hallOfShameChannel.sendMessageEmbeds(any<MessageEmbed>())).thenReturn(sendAction)
         `when`(sendAction.queue(any(), any())).then { }
         
         assertDoesNotThrow {
             listener.onMessageReactionAdd(event)
         }
         
-        verify(hallOfShameChannel).sendMessageEmbeds(any())
-        verify(hallOfFameChannel, never()).sendMessageEmbeds(any())
+        verify(hallOfShameChannel).sendMessageEmbeds(any<MessageEmbed>())
+        verify(hallOfFameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
     }
 }
