@@ -35,6 +35,8 @@ discord:
     nfl-pickem: 1408123966438244403
     announcements: 1407527948713590887 #1407823859155206225
 
+text-file-directory: ${user.home}/.discordbot/text
+
 weather:
   nominatim:
     base-url: "https://nominatim.openstreetmap.org"

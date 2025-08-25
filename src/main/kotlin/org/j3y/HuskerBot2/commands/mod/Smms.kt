@@ -1,22 +1,16 @@
-package org.j3y.HuskerBot2.commands.other
+package org.j3y.HuskerBot2.commands.mod
 
-import com.fasterxml.jackson.databind.JsonNode
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
-import org.j3y.HuskerBot2.service.EspnService
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.awt.Color
-import java.time.Duration
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 
 @Component
 class Smms : SlashCommand() {
@@ -26,7 +20,8 @@ class Smms : SlashCommand() {
 
     override fun getCommandKey(): String = "smms"
     override fun getDescription(): String = "Tee hee"
-    override fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.enabledFor(net.dv8tion.jda.api.Permission.MESSAGE_MANAGE)
+    override fun isLogged(): Boolean = false
+    override fun getPermissions(): DefaultMemberPermissions = DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE)
     override fun getOptions(): List<OptionData> = listOf(
         OptionData(OptionType.STRING, "destination", "The target channel", true)
             .addChoice("General", "general")
