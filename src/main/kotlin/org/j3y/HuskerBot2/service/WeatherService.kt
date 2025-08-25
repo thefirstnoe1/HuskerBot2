@@ -207,7 +207,7 @@ class WeatherService(
     private fun addSnarkyDescription(forecast: WeatherForecast): WeatherForecast {
         return try {
             val weatherPrompt = createWeatherPrompt(forecast)
-            val snarkyDescription = googleGeminiService.generateResponse(weatherPrompt)
+            val snarkyDescription = googleGeminiService.generateText(weatherPrompt)
             forecast.copy(snarkyDescription = snarkyDescription)
         } catch (e: Exception) {
             log.error("Error generating snarky weather description", e)
