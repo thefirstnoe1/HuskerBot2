@@ -37,6 +37,8 @@ discord:
     hall-of-fame: 487431877792104470
     hall-of-shame: 860686057850798090
 
+text-file-directory: ${user.home}/.discordbot/text
+
 weather:
   nominatim:
     base-url: "https://nominatim.openstreetmap.org"

@@ -24,9 +24,15 @@ class CommandListener : ListenerAdapter() {
 
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-        log.info("{} sent slash command: '{}' (subcommand: '{}') with options: {}", event.user.effectiveName, event.name, event.subcommandName, event.options.map { "${it.name}: ${it.asString}" })
         if (commands.containsKey(event.name)) {
-            commands[event.name]?.execute(event)
+            val command = commands[event.name] ?: return
+
+            val subcommandIsLogged = command.getSubcommands().find { it.getCommandKey() == event.subcommandName }?.isLogged() ?: true
+            if (command.isLogged() && subcommandIsLogged) {
+                log.info("{} sent slash command: '{}' (subcommand: '{}') with options: {}", event.user.effectiveName, event.name, event.subcommandName, event.options.map { "${it.name}: ${it.asString}" })
+            }
+
+            command.execute(event)
         }
     }
 

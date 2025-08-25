@@ -12,6 +12,7 @@ open class SlashCommand {
 
     open fun getCommandKey(): String = ""
     open fun isSubcommand(): Boolean = false
+    open fun isLogged(): Boolean = true
     open fun getSubcommands(): List<SlashCommand> = emptyList()
     open fun getDescription(): String = ""
     open fun getOptions(): List<OptionData> = emptyList()
