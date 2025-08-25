@@ -44,7 +44,7 @@ weather:
     user-agent: "HuskerBot2 (huskerbot@example.com)"
   tomorrow:
     base-url: "https://api.tomorrow.io/v4"
-    api-key: ""
+    api-key: ${TOMORROW-WEATHER-KEY:}
   cache:
     coordinates-ttl: 86400
     forecast-ttl: 3600
