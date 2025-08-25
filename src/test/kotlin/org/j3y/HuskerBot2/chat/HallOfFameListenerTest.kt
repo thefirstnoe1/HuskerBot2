@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.entities.emoji.EmojiUnion
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.requests.RestAction
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -86,7 +87,7 @@ class HallOfFameListenerTest {
         val (event, _, guild) = createEventWithReactions(reactions = listOf(reaction))
         
         val hallOfFameChannel = mock(TextChannel::class.java)
-        val sendAction = mock(RestAction::class.java) as RestAction<Message>
+        val sendAction = mock(MessageCreateAction::class.java)
         
         `when`(guild.getTextChannelById(hallOfFameChannelId)).thenReturn(hallOfFameChannel)
         `when`(hallOfFameChannel.sendMessageEmbeds(any<MessageEmbed>())).thenReturn(sendAction)
@@ -105,7 +106,7 @@ class HallOfFameListenerTest {
         val (event, _, guild) = createEventWithReactions(reactions = listOf(reaction))
         
         val hallOfShameChannel = mock(TextChannel::class.java)
-        val sendAction = mock(RestAction::class.java) as RestAction<Message>
+        val sendAction = mock(MessageCreateAction::class.java)
         
         `when`(guild.getTextChannelById(hallOfShameChannelId)).thenReturn(hallOfShameChannel)
         `when`(hallOfShameChannel.sendMessageEmbeds(any<MessageEmbed>())).thenReturn(sendAction)
@@ -168,7 +169,7 @@ class HallOfFameListenerTest {
         
         val hallOfFameChannel = mock(TextChannel::class.java)
         val hallOfShameChannel = mock(TextChannel::class.java)
-        val sendAction = mock(RestAction::class.java) as RestAction<Message>
+        val sendAction = mock(MessageCreateAction::class.java)
         
         `when`(guild.getTextChannelById(hallOfFameChannelId)).thenReturn(hallOfFameChannel)
         `when`(guild.getTextChannelById(hallOfShameChannelId)).thenReturn(hallOfShameChannel)
