@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import java.awt.Color
+import java.util.Collection
 
 class AnnouncementTest {
 
@@ -26,10 +27,14 @@ class AnnouncementTest {
         assertEquals("Send an announcement to the configured announcements channel.", cmd.getDescription())
 
         val opts: List<OptionData> = cmd.getOptions()
-        assertEquals(1, opts.size)
-        assertEquals("message", opts[0].name)
-        assertEquals(OptionType.STRING, opts[0].type)
-        assertTrue(opts[0].isRequired)
+        assertEquals(2, opts.size)
+        val byName = opts.associateBy { it.name }
+        assertTrue(byName.containsKey("message"))
+        assertEquals(OptionType.STRING, byName["message"]?.type)
+        assertFalse(byName["message"]?.isRequired ?: true)
+        assertTrue(byName.containsKey("text-file"))
+        assertEquals(OptionType.STRING, byName["text-file"]?.type)
+        assertFalse(byName["text-file"]?.isRequired ?: true)
 
         val perms: DefaultMemberPermissions = cmd.getPermissions()
         assertNotNull(perms)
@@ -55,7 +60,7 @@ class AnnouncementTest {
     }
 
     @Test
-    fun `happy path sends @everyone with embed and replies success`() {
+    fun `happy path sends @ everyone with embed and replies success`() {
         val cmd = Announcement().apply { announcementsChannelId = "chan123" }
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val jda = Mockito.mock(JDA::class.java)
@@ -94,9 +99,7 @@ class AnnouncementTest {
         Mockito.verify(channel).sendMessage("@everyone")
         Mockito.verify(msgAction).setEmbeds(Mockito.any(MessageEmbed::class.java))
         // Verify that EVERYONE mentions are explicitly allowed
-        val collCaptor = ArgumentCaptor.forClass(Collection::class.java as Class<Collection<MentionType>>)
-        Mockito.verify(msgAction).setAllowedMentions(collCaptor.capture())
-        assertTrue(collCaptor.value.contains(MentionType.EVERYONE))
+        Mockito.verify(msgAction).setAllowedMentions(Mockito.argThat { c: java.util.Collection<MentionType> -> c.contains(MentionType.EVERYONE) })
 
         Mockito.verify(event).reply("Announcement sent!")
         Mockito.verify(replyAction).setEphemeral(true)
