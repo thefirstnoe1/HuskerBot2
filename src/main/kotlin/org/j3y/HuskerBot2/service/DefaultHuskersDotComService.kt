@@ -28,4 +28,10 @@ class DefaultHuskersDotComService : HuskersDotComService {
 
         return client.getForObject(uri.toUriString(), JsonNode::class.java) ?: throw RuntimeException("Unable to retrieve schedule for year $year")
     }
+
+    override fun getScheduleById(scheduleId: Int): JsonNode {
+        val uri = UriComponentsBuilder.fromUriString(url).buildAndExpand(scheduleId)
+
+        return client.getForObject(uri.toUriString(), JsonNode::class.java) ?: throw RuntimeException("Unable to retrieve schedule for id $scheduleId")
+    }
 }
