@@ -33,10 +33,6 @@ class VbSched : SlashCommand() {
 
         try {
             val apiJson: JsonNode = huskersDotComService.getScheduleById(volleyballScheduleId)
-            
-            // Debug: Log the full API response structure
-            println("DEBUG: Full API response: $apiJson")
-            
             val events = apiJson.path("data")
 
             if (events.isEmpty) {
@@ -74,10 +70,7 @@ class VbSched : SlashCommand() {
             val datetime = event.path("datetime").asText()
             val status = event.path("status").asText("")
             val result = event.path("schedule_event_result").path("result").asText("")
-            
-            // Debug: Log the entire event structure
-            println("DEBUG: Full event structure: $event")
-            
+
             // Get network information from schedule_event_links icon data
             val network = extractNetworkFromScheduleLinks(event.path("schedule_event_links"))
             
@@ -149,7 +142,6 @@ class VbSched : SlashCommand() {
         
         if (!secondOpponentId.isMissingNode && !secondOpponentId.isNull) {
             // This is a game between two other teams (tournament game)
-            println("DEBUG: Filtering out non-Nebraska game - opponent: '${event.path("opponent_name").asText()}', second_opponent_id: '${secondOpponentId.asText()}', date: '${event.path("datetime").asText()}'")
             return false
         }
         
@@ -170,20 +162,13 @@ class VbSched : SlashCommand() {
     }
 
     internal fun extractNetworkFromScheduleLinks(scheduleLinks: JsonNode): String {
-        // Debug: Log the structure of scheduleLinks
-        println("DEBUG: scheduleLinks structure: ${scheduleLinks}")
-        
         // Look for TV/broadcast related links
         for ((index, link) in scheduleLinks.withIndex()) {
-            println("DEBUG: Processing link $index: $link")
-            
             val icon = link.path("icon")
             val iconName = icon.path("name").asText("")
             val iconTitle = icon.path("title").asText("")
             val iconAlt = icon.path("alt").asText("")
-            
-            println("DEBUG: Icon data - name: '$iconName', title: '$iconTitle', alt: '$iconAlt'")
-            
+
             // Check if this is a TV/broadcast link
             val isTvLink = iconName.contains("tv", ignoreCase = true) ||
                           iconTitle.contains("tv", ignoreCase = true) ||
@@ -219,28 +204,22 @@ class VbSched : SlashCommand() {
                           iconName.contains("npm", ignoreCase = true) ||
                           iconTitle.contains("npm", ignoreCase = true) ||
                           iconAlt.contains("npm", ignoreCase = true)
-            
-            println("DEBUG: isTvLink: $isTvLink")
-            
+
             if (isTvLink) {
                 // Try to extract network from title first (most reliable)
                 val networkFromTitle = extractNetworkFromText(iconTitle)
-                println("DEBUG: networkFromTitle: '$networkFromTitle'")
                 if (networkFromTitle != "TBD") return networkFromTitle
                 
                 // Try alt field next
                 val networkFromAlt = extractNetworkFromText(iconAlt)
-                println("DEBUG: networkFromAlt: '$networkFromAlt'")
                 if (networkFromAlt != "TBD") return networkFromAlt
                 
                 // Fall back to filename
                 val networkFromFilename = extractNetworkFromIconFilename(iconName)
-                println("DEBUG: networkFromFilename: '$networkFromFilename'")
                 if (networkFromFilename != "TBD") return networkFromFilename
             }
         }
-        
-        println("DEBUG: No TV network found, returning TBD")
+
         return "TBD"
     }
 
