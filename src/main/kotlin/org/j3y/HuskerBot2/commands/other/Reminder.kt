@@ -71,7 +71,7 @@ class Reminder(
 
             reminderService.scheduleReminder(targetChannelId, commandEvent.user.idLong, message, executionTime)
 
-            val formatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy h:mm:ss a z").withLocale(Locale.US).withZone(ZoneId.systemDefault())
+            val formatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy h:mm:ss a z").withLocale(Locale.US).withZone(ZoneId.of("America/Chicago"))
             val friendlyTime = formatter.format(executionTime)
 
             val embed = net.dv8tion.jda.api.EmbedBuilder()
