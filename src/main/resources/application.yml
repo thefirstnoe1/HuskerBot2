@@ -17,7 +17,7 @@ spring:
       path: /h2-console
 
 discord:
-  token: ${DISCORD-TOKEN:}
+  token: ${DISCORD_TOKEN:}
 
   guilds:
     - 1407527947761488085 # Husker Bot Test Discord
@@ -34,8 +34,8 @@ discord:
     admin: 1407823859155206224
     nfl-pickem: 1408123966438244403
     announcements: 1407527948713590887 #1407823859155206225
-    hall-of-fame: 487431877792104470
-    hall-of-shame: 860686057850798090
+    hall-of-fame: 1409592733990916116
+    hall-of-shame: 1409592706661089442
 
 text-file-directory: ${user.home}/.discordbot/text
 
@@ -48,7 +48,7 @@ weather:
     user-agent: "HuskerBot2 (huskerbot@example.com)"
   tomorrow:
     base-url: "https://api.tomorrow.io/v4"
-    api-key: ${TOMORROW-WEATHER-KEY:}
+    api-key: ${TOMORROW_WEATHER_KEY:}
   cache:
     coordinates-ttl: 86400
     forecast-ttl: 3600
@@ -56,7 +56,7 @@ weather:
 cfbd:
   base-url: "https://api.collegefootballdata.com"
   user-agent: "HuskerBot2 (huskerbot@example.com)"
-  api-key: ${CFBD-KEY:}
+  api-key: ${CFBD_KEY:}
   cache:
     matchup-ttl: 3600
 
@@ -71,7 +71,7 @@ backup:
 gemini:
   base-url: "https://generativelanguage.googleapis.com"
   model: "models/gemini-2.5-flash"
-  api-key: ${GEMINI-KEY:}
+  api-key: ${GEMINI_KEY:}
 
 ---
 # Activate this block by setting SPRING_PROFILES_ACTIVE=mysql
