@@ -42,3 +42,8 @@ out/
 
 ### Agent Guidelines ###
 AGENTS.md
+
+### Environment Variables ###
+.env
+.env.local
+setup-env-local.sh
