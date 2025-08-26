@@ -26,6 +26,7 @@ class SocialEmbedFixerListenerTest {
         val user = Mockito.mock(User::class.java)
 
         `when`(event.message).thenReturn(message)
+        `when`(event.author).thenReturn(user)
         `when`(message.author).thenReturn(user)
         `when`(user.isBot).thenReturn(isBot)
         `when`(user.isSystem).thenReturn(isSystem)
@@ -56,12 +57,13 @@ class SocialEmbedFixerListenerTest {
         val captor = ArgumentCaptor.forClass(String::class.java)
         Mockito.verify(channel).sendMessage(captor.capture())
         val posted = captor.value.trim()
+        val contentOnly = posted.substringAfter("posted:").trim()
 
         // Should contain two fxtwitter links, one per line, no duplicates
-        val lines = posted.split('\n')
+        val lines = contentOnly.split('\n').filter { it.isNotBlank() }
         assertEquals(2, lines.size)
-        assertTrue(lines[0].startsWith("https://fxtwitter.com/") || lines[1].startsWith("https://fxtwitter.com/"))
-        assertTrue(lines.all { it.contains("/status/") || it.contains("/u/") || it.startsWith("https://fxtwitter.com/") })
+        assertTrue(lines.any { it.startsWith("https://fxtwitter.com/") })
+        assertTrue(lines.all { it.startsWith("https://fxtwitter.com/") })
     }
 
     @Test
@@ -82,7 +84,8 @@ class SocialEmbedFixerListenerTest {
         val captor = ArgumentCaptor.forClass(String::class.java)
         Mockito.verify(message.channel).sendMessage(captor.capture())
         val posted = captor.value.trim()
-        val lines = posted.split('\n')
+        val contentOnly = posted.substringAfter("posted:").trim()
+        val lines = contentOnly.split('\n').filter { it.isNotBlank() }
 
         assertTrue(lines.any { it.startsWith("https://kkinstagram.com/") })
         assertTrue(lines.any { it.startsWith("https://vxtiktok.com/") })
@@ -101,9 +104,10 @@ class SocialEmbedFixerListenerTest {
         val captor = ArgumentCaptor.forClass(String::class.java)
         Mockito.verify(message.channel).sendMessage(captor.capture())
         val posted = captor.value.trim()
-        assertTrue(posted.startsWith("https://embedez.seria.moe/embed?url="))
+        val contentOnly = posted.substringAfter("posted:").trim()
+        assertTrue(contentOnly.startsWith("https://embedez.seria.moe/embed?url="))
         // ensure original is url-encoded within
-        assertTrue(posted.contains(java.net.URLEncoder.encode(source, "UTF-8")))
+        assertTrue(contentOnly.contains(java.net.URLEncoder.encode(source, "UTF-8")))
     }
 
     @Test
