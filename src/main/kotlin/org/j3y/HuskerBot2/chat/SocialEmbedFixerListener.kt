@@ -76,7 +76,7 @@ class SocialEmbedFixerListener : ListenerAdapter() {
             })
 
             // Post rewritten links so Discord re-embeds them nicely
-            val response = buildString {
+            val response = event.author.asMention + " posted: " + buildString {
                 replacements.distinct().forEach { append(it).append('\n') }
             }
 
