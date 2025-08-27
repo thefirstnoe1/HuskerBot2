@@ -1,7 +1,5 @@
 package org.j3y.HuskerBot2.commands.mod
 
-import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
@@ -11,6 +9,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
+import net.dv8tion.jda.api.requests.restaction.CacheRestAction
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
@@ -103,6 +102,16 @@ class IowaTest {
             null
         }.`when`(action).queue(Mockito.any(), Mockito.any())
 
+        // Stub DM open to avoid NPE by triggering failure consumer
+        @Suppress("UNCHECKED_CAST")
+        val dmOpen = Mockito.mock(CacheRestAction::class.java) as CacheRestAction<net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel>
+        `when`(jdaUser.openPrivateChannel()).thenReturn(dmOpen)
+        Mockito.doAnswer { inv ->
+            val failure = inv.getArgument<java.util.function.Consumer<Throwable>>(1)
+            failure.accept(RuntimeException("dm disabled"))
+            null
+        }.`when`(dmOpen).queue(Mockito.any(), Mockito.any())
+
         // replyEmbeds returns ReplyCallbackAction
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         `when`(event.replyEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(replyAction)
@@ -162,6 +171,16 @@ class IowaTest {
             success.accept(null)
             null
         }.`when`(action).queue(Mockito.any(), Mockito.any())
+
+        // Stub DM open to avoid NPE by triggering failure consumer
+        @Suppress("UNCHECKED_CAST")
+        val dmOpen2 = Mockito.mock(CacheRestAction::class.java) as CacheRestAction<net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel>
+        `when`(jdaUser.openPrivateChannel()).thenReturn(dmOpen2)
+        Mockito.doAnswer { inv ->
+            val failure = inv.getArgument<java.util.function.Consumer<Throwable>>(1)
+            failure.accept(RuntimeException("dm disabled"))
+            null
+        }.`when`(dmOpen2).queue(Mockito.any(), Mockito.any())
 
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         `when`(event.replyEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(replyAction)

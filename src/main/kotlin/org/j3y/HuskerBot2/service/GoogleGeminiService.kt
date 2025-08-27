@@ -26,7 +26,7 @@ class GoogleGeminiService(
         }
         return try {
             val uri = UriComponentsBuilder
-                .fromHttpUrl(baseUrl)
+                .fromUriString(baseUrl)
                 .path("/v1beta/")
                 .path(model)
                 .path(":generateContent")

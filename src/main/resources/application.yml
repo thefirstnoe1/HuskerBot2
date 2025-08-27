@@ -37,7 +37,7 @@ discord:
     hall-of-fame: 1409592733990916116
     hall-of-shame: 1409592706661089442
 
-text-file-directory: ${user.home}/.discordbot/text
+text-file-directory: build/text
 
 weather:
   nominatim:

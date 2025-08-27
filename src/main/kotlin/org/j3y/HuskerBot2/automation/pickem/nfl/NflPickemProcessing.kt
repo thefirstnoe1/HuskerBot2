@@ -13,13 +13,12 @@ import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
 import org.j3y.HuskerBot2.service.EspnService
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
 import java.awt.Color
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -40,7 +39,7 @@ class NflPickemProcessing {
         processPreviousWeek()
         deleteAllPosts()
 
-        val week = WeekResolver.currentNflWeek()
+        val week = SeasonResolver.currentNflWeek()
         log.info("Posting NFL Pick'em for week {}", week)
         val data = espnService.getNflScoreboard(week)
 
@@ -66,6 +65,7 @@ class NflPickemProcessing {
         }
 
         try {
+            val season = data.path("season").path("year").asInt()
             val events = data.path("events")
             if (events.isEmpty) {
                 channel.sendMessage("No NFL games found for week $week.").queue()
@@ -75,7 +75,6 @@ class NflPickemProcessing {
                     val embed = buildGameEmbed(event)
                     val (awayName, awayId, homeName, homeId, eventId) = extractIds(event)
                     val dateTime = OffsetDateTime.parse(event.path("date").asText("")).toInstant()
-                    val season = LocalDateTime.now().year
 
                     val nflGame = getGame(eventId)
                     nflGame.homeTeam = homeName
@@ -251,7 +250,7 @@ class NflPickemProcessing {
     }
 
     private fun processPreviousWeek() {
-        val prevWeek = WeekResolver.currentNflWeek() - 1
+        val prevWeek = SeasonResolver.currentNflWeek() - 1
 
         if (prevWeek <= 0) {
             log.warn("Not processing previous week - there were no games in week {}", prevWeek)
@@ -301,8 +300,8 @@ class NflPickemProcessing {
     }
 
     private fun postPreviousWeekResults(channel: TextChannel) {
-        val prevWeek = WeekResolver.currentNflWeek() - 1
-        val season = LocalDateTime.now().year
+        val prevWeek = SeasonResolver.currentNflWeek() - 1
+        val season = SeasonResolver.currentNflSeason()
         if (prevWeek <= 0) {
             log.info("No previous week results to post (week {}))", prevWeek)
             return
@@ -341,7 +340,7 @@ class NflPickemProcessing {
     }
 
     private fun postSeasonLeaderboard(channel: TextChannel) {
-        val season = LocalDateTime.now().year
+        val season = SeasonResolver.currentNflSeason()
         val allPicks = try { nflPickRepo.findAll() } catch (e: Exception) { emptyList() }
         val correctByUser = allPicks
             .asSequence()

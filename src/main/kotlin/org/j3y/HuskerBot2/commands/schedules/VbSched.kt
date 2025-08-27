@@ -163,7 +163,7 @@ class VbSched : SlashCommand() {
 
     internal fun extractNetworkFromScheduleLinks(scheduleLinks: JsonNode): String {
         // Look for TV/broadcast related links
-        for ((index, link) in scheduleLinks.withIndex()) {
+        for ((_, link) in scheduleLinks.withIndex()) {
             val icon = link.path("icon")
             val iconName = icon.path("name").asText("")
             val iconTitle = icon.path("title").asText("")

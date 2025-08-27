@@ -2,7 +2,6 @@ package org.j3y.HuskerBot2.commands.mod
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
-import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.exceptions.PermissionException
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
@@ -37,6 +36,7 @@ class Iowa : SlashCommand() {
         try {
             user.timeoutFor(duration).reason(reason).queue(
                 {
+                    // Send confirmation in the channel
                     commandEvent.replyEmbeds(
                         EmbedBuilder()
                             .setTitle("Banished to Iowa")
@@ -46,6 +46,18 @@ class Iowa : SlashCommand() {
                             .addField("Duration", "${duration.toMinutes()} minutes", false)
                             .build()
                     ).queue()
+
+                    // Also DM the affected user
+                    val dmEmbed = EmbedBuilder()
+                        .setTitle("Sent to Iowa")
+                        .setDescription("Fuck Iowa. You're here because you did some shit that an Iowa fan would do. Think about what you did and we might let you back into Nebraska. Good luck, you fucking Iowadiot.")
+                        .setColor(Color.YELLOW)
+                        .addField("Reason", reason, false)
+                        .addField("Duration", "${duration.toMinutes()} minutes", false)
+                        .build()
+                    user.user.openPrivateChannel().queue({ channel ->
+                        channel.sendMessageEmbeds(dmEmbed).queue({}, { /* Ignore DM failures (user may have DMs closed) */ })
+                    }, { /* Ignore failures opening DM channel */ })
                 },
                 { commandEvent.reply("Unable to Iowa ${user.user.effectiveName}.").setEphemeral(true).queue() }
             )

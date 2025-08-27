@@ -6,10 +6,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.EspnService
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 
 @Component
 class NflSched : SlashCommand() {
@@ -27,7 +26,7 @@ class NflSched : SlashCommand() {
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
         commandEvent.deferReply().queue()
-        val week = commandEvent.getOption("week")?.getAsInt() ?: WeekResolver.currentNflWeek()
+        val week = commandEvent.getOption("week")?.getAsInt() ?: SeasonResolver.currentNflWeek()
 
         val apiJson: JsonNode = espnService.getNflScoreboard(week)
         val embeds = espnService.buildEventEmbed(apiJson)

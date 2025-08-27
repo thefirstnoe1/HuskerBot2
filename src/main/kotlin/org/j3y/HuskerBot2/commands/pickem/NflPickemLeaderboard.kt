@@ -3,9 +3,9 @@ package org.j3y.HuskerBot2.commands.pickem
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.repository.NflPickRepo
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.time.LocalDate
 
 @Component
 class NflPickemLeaderboard : SlashCommand() {
@@ -19,7 +19,7 @@ class NflPickemLeaderboard : SlashCommand() {
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
         commandEvent.deferReply().queue()
 
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentNflSeason()
         val allPicks = nflPickRepo.findAll()
         val correctByUser = allPicks
             .asSequence()
