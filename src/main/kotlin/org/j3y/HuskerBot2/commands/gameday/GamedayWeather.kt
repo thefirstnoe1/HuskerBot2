@@ -8,6 +8,7 @@ import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.model.WeatherForecast
 import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.WeatherService
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -70,7 +71,7 @@ class GamedayWeather : SlashCommand() {
     
     private fun getNextGame(): ScheduleEntity? {
         return try {
-            val currentYear = LocalDateTime.now().year
+            val currentYear = SeasonResolver.currentCfbSeason()
             val allGames = scheduleRepo.findAllBySeasonOrderByDateTimeAsc(currentYear)
             val now = Instant.now()
             

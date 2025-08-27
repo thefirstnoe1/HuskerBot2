@@ -7,14 +7,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-// no need to import MessageHistory; we avoid deleteAllPosts history interactions
-import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
-import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction
 import net.dv8tion.jda.api.requests.restaction.PermissionOverrideAction
 import org.j3y.HuskerBot2.model.NflGameEntity
@@ -75,6 +71,9 @@ class NflPickemProcessingTest {
         val root = mapper.createObjectNode()
         val events = mapper.createArrayNode()
         root.set<ArrayNode>("events", events)
+        val season = mapper.createObjectNode()
+        season.put("year", LocalDate.now().year)
+        root.set<ObjectNode>("season", season)
 
         val event = mapper.createObjectNode()
         event.put("id", eventId)

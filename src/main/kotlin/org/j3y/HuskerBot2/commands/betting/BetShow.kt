@@ -10,6 +10,7 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.model.BetEntity
 import org.j3y.HuskerBot2.repository.BetRepo
 import org.j3y.HuskerBot2.repository.ScheduleRepo
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -29,7 +30,7 @@ class BetShow : SlashCommand() {
     override fun isSubcommand(): Boolean = true
     override fun getDescription(): String = "Show all bets for a specific game."
     override fun getOptions(): List<OptionData> {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val choices: List<Command.Choice> = scheduleRepo.findAllBySeasonOrderByDateTimeAsc(season)
             .map { Command.Choice("${it.opponent} - Week ${it.week}", it.week.toLong()) }
 
@@ -39,7 +40,7 @@ class BetShow : SlashCommand() {
     }
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val week = commandEvent.getOption("week")?.asInt ?: 1
 
         val sched = scheduleRepo.findBySeasonAndWeek(season, week)

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -28,7 +29,8 @@ class DefaultEspnService(
     private final val FORMATTER_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd")
     private final val FORMATTER_NHL_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     private final val FORMATTER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a z")
-    private final val YEAR = LocalDate.now().year
+    private final val YEAR_CFB = SeasonResolver.currentCfbSeason()
+    private final val YEAR_NFL = SeasonResolver.currentNflSeason()
 
     @Cacheable("cfbScoreboards")
     override fun getCfbScoreboard(league: Int, week: Int): JsonNode {
@@ -36,7 +38,7 @@ class DefaultEspnService(
         val espnUriBuilder =
             UriComponentsBuilder.fromUriString(
                 "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard" +
-                    "?lang=en&region=us&calendartype=blacklist&limit=300&dates=${YEAR}&seasontype=2"
+                    "?lang=en&region=us&calendartype=blacklist&limit=300&dates=${YEAR_CFB}&seasontype=2"
             )
                 .queryParam("week", week)
 
@@ -50,9 +52,9 @@ class DefaultEspnService(
     @Cacheable("nflScoreboards")
     override fun getNflScoreboard(week: Int): JsonNode {
         log.info("Updating NFL Cache.")
-        val espnUriBuilder = UriComponentsBuilder.fromHttpUrl(
+        val espnUriBuilder = UriComponentsBuilder.fromUriString(
             "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard" +
-                "?lang=en&region=us&calendartype=blacklist&limit=100&dates=${YEAR}&seasontype=2"
+                "?lang=en&region=us&calendartype=blacklist&limit=100&dates=${YEAR_NFL}&seasontype=2"
         ).queryParam("week", week)
 
         return client.getForObject(espnUriBuilder.build().toUri(), JsonNode::class.java)!!
@@ -65,7 +67,7 @@ class DefaultEspnService(
         val lookupDate = LocalDate.now().plusDays(days.toLong())
         val dateQuery = lookupDate.format(FORMATTER_NHL_DATE)
 
-        val espnUriBuilder = UriComponentsBuilder.fromHttpUrl(
+        val espnUriBuilder = UriComponentsBuilder.fromUriString(
             "https://site.web.api.espn.com/apis/site/v2/" +
                 "sports/hockey/nhl/scoreboard?region=us&lang=en&limit=100&calendartype=blacklist"
         )
@@ -78,7 +80,7 @@ class DefaultEspnService(
     override fun getTeamData(team: String): JsonNode {
         log.info("Updating Team Data Cache for Team $team.")
 
-        val espnUriBuilder = UriComponentsBuilder.fromHttpUrl(
+        val espnUriBuilder = UriComponentsBuilder.fromUriString(
             "http://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{team}"
         )
 

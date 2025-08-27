@@ -1,8 +1,6 @@
 package org.j3y.HuskerBot2.commands.images
 
-import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
-import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
@@ -10,7 +8,6 @@ import org.j3y.HuskerBot2.model.ImageEntity
 import org.j3y.HuskerBot2.repository.ImageRepo
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import org.springframework.web.client.HttpClientErrorException
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
@@ -84,7 +81,7 @@ class AddImage : SlashCommand() {
     // Returns the Content-Type header if obtainable, else null.
     fun fetchContentType(url: String, connectTimeoutMs: Int = 5000, readTimeoutMs: Int = 5000): String? {
         return try {
-            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            val connection = (URI(url).toURL().openConnection() as HttpURLConnection).apply {
                 instanceFollowRedirects = true
                 connectTimeout = connectTimeoutMs
                 readTimeout = readTimeoutMs
@@ -100,7 +97,7 @@ class AddImage : SlashCommand() {
             }
 
             // Some servers don't support HEAD; try a minimal GET request.
-            val getConn = (URL(url).openConnection() as HttpURLConnection).apply {
+            val getConn = (URI(url).toURL().openConnection() as HttpURLConnection).apply {
                 instanceFollowRedirects = true
                 connectTimeout = connectTimeoutMs
                 readTimeout = readTimeoutMs

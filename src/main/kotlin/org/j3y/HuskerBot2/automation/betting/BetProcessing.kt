@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.JDA
 import org.j3y.HuskerBot2.repository.BetRepo
 import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.CfbBettingLinesService
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
@@ -22,11 +22,11 @@ class BetProcessing {
 
     // Every Monday at 2:00 AM Central (db-scheduler recurring task configured)
     final fun processBets() {
-        return processBets(WeekResolver.currentCfbWeek() - 1)
+        return processBets(SeasonResolver.currentCfbWeek() - 1)
     }
 
     final fun processBets(week: Int) {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
 
         val gameEntity = scheduleRepo.findBySeasonAndWeek(season, week) ?: return log.info("No schedule found for week $week.")
 

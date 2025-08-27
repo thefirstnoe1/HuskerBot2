@@ -7,6 +7,7 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.model.BetEntity
 import org.j3y.HuskerBot2.repository.BetRepo
 import org.j3y.HuskerBot2.repository.ScheduleRepo
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -25,7 +26,7 @@ class BetLeaderboard : SlashCommand() {
     override fun getDescription(): String = "Show the season-long betting leaderboard."
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val bets: List<BetEntity> = betRepo.findBySeason(season)
 
         if (bets.isEmpty()) {
