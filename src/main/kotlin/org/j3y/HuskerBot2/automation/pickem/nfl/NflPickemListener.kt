@@ -7,7 +7,7 @@ import org.j3y.HuskerBot2.commands.pickem.NflPickemShow
 import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -25,7 +25,7 @@ class NflPickemListener : ListenerAdapter() {
         val id = event.componentId
 
         if (!id.startsWith("nflpickem|")) return
-        if (id == "nflpickem|mypicks") return nflPickemShow.handleEvent(event, WeekResolver.currentNflWeek())
+        if (id == "nflpickem|mypicks") return nflPickemShow.handleEvent(event, SeasonResolver.currentNflWeek())
         try {
             val parts = id.split("|")
             if (parts.size < 3) return

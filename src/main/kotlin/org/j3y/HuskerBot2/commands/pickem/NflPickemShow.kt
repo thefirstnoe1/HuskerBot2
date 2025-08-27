@@ -2,8 +2,6 @@ package org.j3y.HuskerBot2.commands.pickem
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent
-import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import net.dv8tion.jda.api.interactions.commands.Command
@@ -13,12 +11,11 @@ import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.model.NflGameEntity
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.awt.Color
-import java.time.LocalDate
 
 @Component
 class NflPickemShow : SlashCommand() {
@@ -34,7 +31,7 @@ class NflPickemShow : SlashCommand() {
     override fun getOptions(): List<OptionData> {
         val weekChoices: MutableList<Command.Choice> = mutableListOf()
 
-        for (w in 1..WeekResolver.currentNflWeek()) {
+        for (w in 1..SeasonResolver.currentNflWeek()) {
             weekChoices.add(Command.Choice("Week $w", w.toLong()))
         }
 
@@ -44,7 +41,7 @@ class NflPickemShow : SlashCommand() {
     }
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        val week = commandEvent.getOption("week")?.asInt ?: WeekResolver.currentNflWeek()
+        val week = commandEvent.getOption("week")?.asInt ?: SeasonResolver.currentNflWeek()
         handleEvent(commandEvent, week)
     }
 
@@ -53,7 +50,7 @@ class NflPickemShow : SlashCommand() {
         try {
             val targetUser: User = commandEvent.user
 
-            val season = LocalDate.now().year
+            val season = SeasonResolver.currentNflSeason()
 
             val picks = try { nflPickRepo.findByUserIdAndSeasonAndWeek(targetUser.idLong, season, week) } catch (e: Exception) { emptyList() }
 

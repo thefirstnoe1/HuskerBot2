@@ -37,7 +37,7 @@ class CfbBettingLinesService(
             val entity = HttpEntity<String>(headers)
 
             val uri = UriComponentsBuilder
-                .fromHttpUrl("$baseUrl/lines")
+                .fromUriString("$baseUrl/lines")
                 .queryParam("year", year)
                 .queryParam("seasonType", "regular")
                 .queryParam("week", week)

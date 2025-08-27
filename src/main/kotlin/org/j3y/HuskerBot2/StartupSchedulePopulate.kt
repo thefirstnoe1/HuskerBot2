@@ -6,12 +6,11 @@ import org.j3y.HuskerBot2.automation.backup.DatabaseBackupService
 import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.j3y.HuskerBot2.service.HuskersDotComService
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.time.Instant
-import java.time.LocalDate
 
 @Component
 class StartupSchedulePopulate {
@@ -24,9 +23,9 @@ class StartupSchedulePopulate {
 
     @PostConstruct
     fun init() {
-        val year: Int = LocalDate.now().year
+        val year: Int = SeasonResolver.currentCfbSeason()
         val games = huskersDotComService.getSchedule(year).path("data") as ArrayNode
-        games.forEachIndexed { index, game ->
+        games.forEach { game ->
             val id = game.path("id").asLong()
             val location = game.path("location").asText()
             val opponent = game.path("opponent_name").asText()
@@ -35,7 +34,7 @@ class StartupSchedulePopulate {
             val isConference = game.path("is_conference").asBoolean()
             val venueType = game.path("venue_type").asText()
 
-            val week = WeekResolver.getCfbWeek(datetime)
+            val week = SeasonResolver.getCfbWeek(datetime)
 
             val sched: ScheduleEntity = scheduleRepo.findById(id).orElse(ScheduleEntity(id))
             sched.opponent = opponent

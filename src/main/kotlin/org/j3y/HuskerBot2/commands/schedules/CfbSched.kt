@@ -6,10 +6,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.EspnService
-import org.j3y.HuskerBot2.util.WeekResolver
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 
 
 @Component
@@ -66,7 +65,7 @@ class CfbSched : SlashCommand() {
             return
         }
 
-        val weekInt = commandEvent.getOption("week")?.asInt ?: WeekResolver.currentCfbWeek()
+        val weekInt = commandEvent.getOption("week")?.asInt ?: SeasonResolver.currentCfbWeek()
 
         if (weekInt < 1 || weekInt > 17) {
             commandEvent.hook.sendMessage("Week must be between 1 and 17 inclusive.").queue()

@@ -55,7 +55,7 @@ class CfbMatchupService(
             val entity = HttpEntity<String>(headers)
             
             val uri = UriComponentsBuilder
-                .fromHttpUrl("$baseUrl/teams/matchup")
+                .fromUriString("$baseUrl/teams/matchup")
                 .queryParam("team1", team1)
                 .queryParam("team2", team2)
                 .build(false)
