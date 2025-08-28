@@ -28,7 +28,7 @@ class Gemini(
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
         try {
-            commandEvent.deferReply().queue()
+            commandEvent.deferReply(true).queue()
             val prompt = commandEvent.getOption("prompt")?.asString?.trim()
             if (prompt.isNullOrBlank()) {
                 commandEvent.hook.sendMessage("Please provide a prompt.").setEphemeral(true).queue()
@@ -58,6 +58,7 @@ class Gemini(
                 if (index == 0) {
                     eb.setTitle("Gemini AI")
                     eb.addField("Prompt", prompt, false)
+                    eb.setFooter("Requested by ${commandEvent.member?.effectiveName ?: commandEvent.user.effectiveName}", commandEvent.user.avatarUrl)
                     eb.addField("Response", chunk, false)
                 } else {
                     eb.addField("Response (cont. ${index + 1})", chunk, false)

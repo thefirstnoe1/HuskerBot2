@@ -54,7 +54,7 @@ class GeminiTest {
         @Suppress("UNCHECKED_CAST")
         val messageAction = Mockito.mock(WebhookMessageCreateAction::class.java) as WebhookMessageCreateAction<Message>
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
         `when`(messageAction.setEphemeral(true)).thenReturn(messageAction)
@@ -82,9 +82,15 @@ class GeminiTest {
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
         `when`(opt.asString).thenReturn("Say hi to @everyone and @here")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.getOption("prompt")).thenReturn(opt)
+
+        // mock user used in footer
+        val user = Mockito.mock(net.dv8tion.jda.api.entities.User::class.java)
+        `when`(event.user).thenReturn(user)
+        `when`(user.effectiveName).thenReturn("Tester")
+        `when`(user.avatarUrl).thenReturn(null)
 
         // Setup spam channel mocks and capture embeds sent there
         setupJdaSpamChannelMocks(event)
@@ -122,9 +128,15 @@ class GeminiTest {
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
         `when`(opt.asString).thenReturn("Long prompt")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.getOption("prompt")).thenReturn(opt)
+
+        // mock user used in footer
+        val user = Mockito.mock(net.dv8tion.jda.api.entities.User::class.java)
+        `when`(event.user).thenReturn(user)
+        `when`(user.effectiveName).thenReturn("Tester")
+        `when`(user.avatarUrl).thenReturn(null)
 
         val (_, spamChannel, msgCreateAction) = setupJdaSpamChannelMocks(event)
 
@@ -169,9 +181,15 @@ class GeminiTest {
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
         `when`(opt.asString).thenReturn("Prompt")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.getOption("prompt")).thenReturn(opt)
+
+        // mock user used in footer
+        val user = Mockito.mock(net.dv8tion.jda.api.entities.User::class.java)
+        `when`(event.user).thenReturn(user)
+        `when`(user.effectiveName).thenReturn("Tester")
+        `when`(user.avatarUrl).thenReturn(null)
 
         val (_, spamChannel, msgCreateAction) = setupJdaSpamChannelMocks(event)
         `when`(svc.generateText(Mockito.anyString())).thenReturn("")
@@ -205,7 +223,7 @@ class GeminiTest {
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
         `when`(opt.asString).thenReturn("Prompt")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.getOption("prompt")).thenReturn(opt)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)

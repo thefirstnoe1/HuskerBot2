@@ -65,7 +65,7 @@ class EmojiUsage(
                 .setDescription(description)
                 .addField("Unique Emojis", usages.size.toString(), true)
                 .addField("Total Reactions", totalCount.toString(), true)
-                .setFooter("Requested by ${commandEvent.user.asTag}")
+                .setFooter("Requested by ${commandEvent.member?.effectiveName ?: commandEvent.user.effectiveName}", commandEvent.user.avatarUrl)
                 .setTimestamp(OffsetDateTime.now())
                 .build()
 

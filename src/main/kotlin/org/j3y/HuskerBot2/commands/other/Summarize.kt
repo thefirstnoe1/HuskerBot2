@@ -65,7 +65,7 @@ class Summarize(
                 .setDescription(truncate(message, 3900))
                 .addField("Channel", "#${channel.name}", true)
                 .addField("Messages summarized", messages.size.toString(), true)
-                .setFooter("Requested by ${commandEvent.user.asTag}")
+                .setFooter("Requested by ${commandEvent.member?.effectiveName ?: commandEvent.user.effectiveName}", commandEvent.user.avatarUrl)
                 .setTimestamp(OffsetDateTime.now())
                 .build()
 
