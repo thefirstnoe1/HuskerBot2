@@ -23,7 +23,7 @@ class SummarizeTest {
     @Test
     fun `metadata and options are correct`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         assertEquals("summarize", cmd.getCommandKey())
         assertEquals("Summarize the last N posts in this channel using Gemini", cmd.getDescription())
         val opts: List<OptionData> = cmd.getOptions()
@@ -36,7 +36,7 @@ class SummarizeTest {
     @Test
     fun `execute replies when not in guild channel`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -45,7 +45,7 @@ class SummarizeTest {
 
         val union = Mockito.mock(MessageChannelUnion::class.java)
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
@@ -65,7 +65,7 @@ class SummarizeTest {
     @Test
     fun `execute replies when no recent user messages`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -78,11 +78,13 @@ class SummarizeTest {
         @Suppress("UNCHECKED_CAST")
         val rest = Mockito.mock(RestAction::class.java) as RestAction<List<Message>>
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
         `when`(channel.name).thenReturn("general")
+        // Force fallback to history by making iterableHistory fail
+        `when`(channel.iterableHistory).thenThrow(RuntimeException("no iterable"))
         `when`(channel.history).thenReturn(history)
         `when`(history.retrievePast(Mockito.anyInt())).thenReturn(rest)
         `when`(rest.complete()).thenReturn(emptyList())
@@ -99,7 +101,7 @@ class SummarizeTest {
     @Test
     fun `execute happy path builds embed with sanitized response and transcript`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -119,17 +121,18 @@ class SummarizeTest {
         val m4 = mockMessage("charlie", false, "Hi @everyone and @here")
         val fetched = listOf(m4, m3, m2, m1) // newest->oldest
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
         `when`(channel.name).thenReturn("chat")
+        // Force fallback to history by making iterableHistory fail
+        `when`(channel.iterableHistory).thenThrow(RuntimeException("no iterable"))
         `when`(channel.history).thenReturn(history)
         `when`(history.retrievePast(Mockito.anyInt())).thenReturn(rest)
         `when`(rest.complete()).thenReturn(fetched)
         @Suppress("UNCHECKED_CAST")
-        `when`(hook.sendMessageEmbeds(Mockito.anyList())).thenReturn(messageAction)
-        `when`(hook.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(messageAction)
+        `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
 
         // Stub service and capture prompt via verify afterwards
         `when`(svc.generateText(Mockito.anyString())).thenReturn("Summary with @here mention")
@@ -139,11 +142,22 @@ class SummarizeTest {
         `when`(evUser.asTag).thenReturn("tester#0001")
         `when`(event.user).thenReturn(evUser)
 
+        // Mock JDA spam channel flow
+        val jda = Mockito.mock(net.dv8tion.jda.api.JDA::class.java)
+        val spamChannel = Mockito.mock(net.dv8tion.jda.api.entities.channel.concrete.TextChannel::class.java)
+        val channelMsgAction = Mockito.mock(net.dv8tion.jda.api.requests.restaction.MessageCreateAction::class.java)
+        val sentMsg = Mockito.mock(Message::class.java)
+        `when`(event.jda).thenReturn(jda)
+        `when`(jda.getTextChannelById("1234567890")).thenReturn(spamChannel)
+        `when`(spamChannel.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(channelMsgAction)
+        `when`((channelMsgAction as net.dv8tion.jda.api.requests.RestAction<Message>).complete()).thenReturn(sentMsg)
+        `when`(sentMsg.jumpUrl).thenReturn("https://discord.com/channels/1/2/3")
+
         cmd.execute(event)
 
-        // Verify sent embed with expected fields and sanitized description
+        // Verify embed sent to spam channel and link posted via hook
         val embedCaptor = ArgumentCaptor.forClass(net.dv8tion.jda.api.entities.MessageEmbed::class.java)
-        Mockito.verify(hook).sendMessageEmbeds(embedCaptor.capture())
+        Mockito.verify(spamChannel).sendMessageEmbeds(embedCaptor.capture())
         val embed = embedCaptor.value
         assertEquals("Channel Summary", embed.title)
         val fields = embed.fields
@@ -151,14 +165,16 @@ class SummarizeTest {
         assertEquals("2", fields[1].value) // only alice and charlie included after filtering
         assertTrue(embed.description?.contains("@\u200Bhere") == true)
 
-        // Verify we sent an embed
+        val linkMsgCaptor = ArgumentCaptor.forClass(String::class.java)
+        Mockito.verify(hook).sendMessage(linkMsgCaptor.capture())
+        assertTrue(linkMsgCaptor.value.contains("https://discord.com/channels/1/2/3"))
         Mockito.verify(messageAction).queue()
     }
 
     @Test
-    fun `count option is clamped to 30`() {
+    fun `count option is clamped to 100`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -171,28 +187,39 @@ class SummarizeTest {
         @Suppress("UNCHECKED_CAST")
         val rest = Mockito.mock(RestAction::class.java) as RestAction<List<Message>>
 
-        // Build 40 user messages, newest first
-        val fetched = (1..40).map { idx ->
+        // Build 120 user messages (oldest first list created below)
+        val oldestFirst = (1..120).map { idx ->
             mockMessage("user$idx", false, "m$idx")
-        }.reversed() // oldest first
-        val newestFirst = fetched.reversed()
+        }
+        val newestFirst = oldestFirst.reversed()
 
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
-        `when`(opt.asLong).thenReturn(100L) // request way above max
+        `when`(opt.asLong).thenReturn(1000L) // request way above max
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(event.getOption("count")).thenReturn(opt)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
         `when`(channel.name).thenReturn("chat")
+        // Force fallback to history by making iterableHistory fail
+        `when`(channel.iterableHistory).thenThrow(RuntimeException("no iterable"))
         `when`(channel.history).thenReturn(history)
         `when`(history.retrievePast(Mockito.anyInt())).thenReturn(rest)
         `when`(rest.complete()).thenReturn(newestFirst)
-        @Suppress("UNCHECKED_CAST")
-        `when`(hook.sendMessageEmbeds(Mockito.anyList())).thenReturn(messageAction)
-        `when`(hook.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(messageAction)
         `when`(svc.generateText(Mockito.anyString())).thenReturn("ok")
+        `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+
+        // Mock JDA spam channel flow
+        val jda = Mockito.mock(net.dv8tion.jda.api.JDA::class.java)
+        val spamChannel = Mockito.mock(net.dv8tion.jda.api.entities.channel.concrete.TextChannel::class.java)
+        val channelMsgAction = Mockito.mock(net.dv8tion.jda.api.requests.restaction.MessageCreateAction::class.java)
+        val sentMsg = Mockito.mock(Message::class.java)
+        `when`(event.jda).thenReturn(jda)
+        `when`(jda.getTextChannelById("1234567890")).thenReturn(spamChannel)
+        `when`(spamChannel.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(channelMsgAction)
+        `when`((channelMsgAction as net.dv8tion.jda.api.requests.RestAction<Message>).complete()).thenReturn(sentMsg)
+        `when`(sentMsg.jumpUrl).thenReturn("https://discord.com/channels/1/2/3")
 
         val evUser = Mockito.mock(User::class.java)
         `when`(evUser.asTag).thenReturn("tester#0001")
@@ -200,14 +227,14 @@ class SummarizeTest {
 
         cmd.execute(event)
 
-        // Capture embed to inspect field for count
+        // Capture embed sent to spam channel to inspect field for count
         val embedCaptor = ArgumentCaptor.forClass(net.dv8tion.jda.api.entities.MessageEmbed::class.java)
-        Mockito.verify(hook).sendMessageEmbeds(embedCaptor.capture())
+        Mockito.verify(spamChannel).sendMessageEmbeds(embedCaptor.capture())
         val embed = embedCaptor.value
         val fields = embed.fields
         // The embed has fields: Channel and Messages summarized
         assertEquals("Messages summarized", fields[1].name)
-        assertEquals("30", fields[1].value)
+        assertEquals("100", fields[1].value) // clamped to 100
 
         Mockito.verify(messageAction).queue()
     }
@@ -215,7 +242,7 @@ class SummarizeTest {
     @Test
     fun `blank service response becomes no content`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -230,27 +257,38 @@ class SummarizeTest {
 
         val m1 = mockMessage("alice", false, "hi")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
         `when`(channel.name).thenReturn("chat")
+        // Force fallback to history by making iterableHistory fail
+        `when`(channel.iterableHistory).thenThrow(RuntimeException("no iterable"))
         `when`(channel.history).thenReturn(history)
         `when`(history.retrievePast(Mockito.anyInt())).thenReturn(rest)
         `when`(rest.complete()).thenReturn(listOf(m1))
-        @Suppress("UNCHECKED_CAST")
-        `when`(hook.sendMessageEmbeds(Mockito.anyList())).thenReturn(messageAction)
-        `when`(hook.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(messageAction)
         `when`(svc.generateText(Mockito.anyString())).thenReturn("")
+        `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
 
         val evUser = Mockito.mock(User::class.java)
         `when`(evUser.asTag).thenReturn("tester#0001")
         `when`(event.user).thenReturn(evUser)
 
+        // Mock JDA spam channel flow
+        val jda = Mockito.mock(net.dv8tion.jda.api.JDA::class.java)
+        val spamChannel = Mockito.mock(net.dv8tion.jda.api.entities.channel.concrete.TextChannel::class.java)
+        val channelMsgAction = Mockito.mock(net.dv8tion.jda.api.requests.restaction.MessageCreateAction::class.java)
+        val sentMsg = Mockito.mock(Message::class.java)
+        `when`(event.jda).thenReturn(jda)
+        `when`(jda.getTextChannelById("1234567890")).thenReturn(spamChannel)
+        `when`(spamChannel.sendMessageEmbeds(Mockito.any(net.dv8tion.jda.api.entities.MessageEmbed::class.java))).thenReturn(channelMsgAction)
+        `when`((channelMsgAction as net.dv8tion.jda.api.requests.RestAction<Message>).complete()).thenReturn(sentMsg)
+        `when`(sentMsg.jumpUrl).thenReturn("https://discord.com/channels/1/2/3")
+
         cmd.execute(event)
 
         val embedCaptor = ArgumentCaptor.forClass(net.dv8tion.jda.api.entities.MessageEmbed::class.java)
-        Mockito.verify(hook).sendMessageEmbeds(embedCaptor.capture())
+        Mockito.verify(spamChannel).sendMessageEmbeds(embedCaptor.capture())
         val embed = embedCaptor.value
         assertEquals("(no content)", embed.description)
     }
@@ -258,7 +296,7 @@ class SummarizeTest {
     @Test
     fun `execute catches exception and replies error`() {
         val svc = Mockito.mock(GoogleGeminiService::class.java)
-        val cmd = Summarize(svc)
+        val cmd = Summarize(svc, "1234567890")
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
@@ -273,11 +311,13 @@ class SummarizeTest {
 
         val m1 = mockMessage("alice", false, "hi")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
         `when`(channel.name).thenReturn("chat")
+        // Force fallback to history by making iterableHistory fail
+        `when`(channel.iterableHistory).thenThrow(RuntimeException("no iterable"))
         `when`(channel.history).thenReturn(history)
         `when`(history.retrievePast(Mockito.anyInt())).thenReturn(rest)
         `when`(rest.complete()).thenReturn(listOf(m1))

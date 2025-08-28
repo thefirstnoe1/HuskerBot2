@@ -65,7 +65,7 @@ class Markov : SlashCommand() {
                 .addField("Source", "#${channel.name}", true)
                 .addField("Messages scanned", messages.size.toString(), true)
                 .addField("Order", order.toString(), true)
-                .setFooter("Requested by ${commandEvent.user.asTag}")
+                .setFooter("Requested by ${commandEvent.member?.effectiveName ?: commandEvent.user.effectiveName}", commandEvent.user.avatarUrl)
                 .setTimestamp(OffsetDateTime.now())
                 .build()
 
