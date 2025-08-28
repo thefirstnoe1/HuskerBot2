@@ -42,7 +42,7 @@ class Countdown : SlashCommand() {
         val embed = EmbedBuilder()
             .setTitle("Countdown to $title")
             .setColor(Color.RED)
-            .setDescription("There are $days days, $hours hours, $minutes minutes and $seconds seconds til gameday!")
+            .setDescription("There are $days days, $hours hours, $minutes minutes and $seconds seconds til game time!")
             .build()
 
         commandEvent.hook.sendMessageEmbeds(embed).queue()

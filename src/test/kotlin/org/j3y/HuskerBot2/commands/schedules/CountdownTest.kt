@@ -82,7 +82,7 @@ class CountdownTest {
         val desc = embed.description
         assertNotNull(desc)
         // Expect description like: There are X days, Y hours, Z minutes and W seconds til gameday!
-        val regex = Regex("There are \\d+ days, \\d+ hours, \\d+ minutes and \\d+ seconds til gameday!")
+        val regex = Regex("There are \\d+ days, \\d+ hours, \\d+ minutes and \\d+ seconds til game time!")
         assertTrue(regex.matches(desc!!), "Description did not match expected countdown format: '$desc'")
     }
 }
