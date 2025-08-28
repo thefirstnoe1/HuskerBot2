@@ -9,13 +9,15 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.GoogleGeminiService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.awt.Color
 import java.time.OffsetDateTime
 
 @Component
 class Summarize(
-    private val geminiService: GoogleGeminiService
+    private val geminiService: GoogleGeminiService,
+    @Value("\${discord.channels.bot-spam}") private val botSpamChannelId: String
 ) : SlashCommand() {
 
     private val log = LoggerFactory.getLogger(Summarize::class.java)
@@ -24,9 +26,9 @@ class Summarize(
     override fun getDescription(): String = "Summarize the last N posts in this channel using Gemini"
 
     override fun getOptions(): List<OptionData> = listOf(
-        OptionData(OptionType.INTEGER, "count", "How many recent posts to include (1-30). Default 20", false)
+        OptionData(OptionType.INTEGER, "count", "How many recent posts to include (1-100). Default 50", false)
             .setMinValue(1)
-            .setMaxValue(30)
+            .setMaxValue(100)
     )
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
@@ -39,8 +41,8 @@ class Summarize(
                 return
             }
 
-            val requested = (commandEvent.getOption("count")?.asLong ?: 20L).toInt()
-            val count = requested.coerceIn(1, 30)
+            val requested = (commandEvent.getOption("count")?.asLong ?: 50L).toInt()
+            val count = requested.coerceIn(1, 100)
 
             val messages = fetchRecentMessages(channel, count * 2) // over-fetch a bit to filter out bots/empties
                 .filter { shouldIncludeMessage(it) }
@@ -67,7 +69,14 @@ class Summarize(
                 .setTimestamp(OffsetDateTime.now())
                 .build()
 
-            commandEvent.hook.sendMessageEmbeds(embed).queue()
+            val spamChannel = commandEvent.jda.getTextChannelById(botSpamChannelId)
+            if (spamChannel == null) {
+                commandEvent.reply("Bot spam channel not found.").setEphemeral(true).queue()
+                return
+            }
+
+            val link = spamChannel.sendMessageEmbeds(embed).complete().jumpUrl
+            commandEvent.hook.sendMessage("View channel summary here: $link").queue()
         } catch (e: Exception) {
             log.error("Error executing /summarize", e)
             commandEvent.hook.sendMessage("Error while summarizing: ${e.message}").setEphemeral(true).queue()
