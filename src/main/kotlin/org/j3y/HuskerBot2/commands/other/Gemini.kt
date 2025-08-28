@@ -7,12 +7,14 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.GoogleGeminiService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.awt.Color
 
 @Component
 class Gemini(
-    private val geminiService: GoogleGeminiService
+    private val geminiService: GoogleGeminiService,
+    @Value("\${discord.channels.bot-spam}") val botSpamChannelId: String
 ) : SlashCommand() {
 
     private val log = LoggerFactory.getLogger(Gemini::class.java)
@@ -63,7 +65,15 @@ class Gemini(
                 embeds.add(eb.build())
             }
 
-            commandEvent.hook.sendMessageEmbeds(embeds).queue()
+            val spamChannel = commandEvent.jda.getTextChannelById(botSpamChannelId)
+
+            if (spamChannel == null) {
+                commandEvent.reply("Bot spam channel not found.").setEphemeral(true).queue()
+                return
+            }
+
+            val link = spamChannel.sendMessageEmbeds(embeds).complete().jumpUrl
+            commandEvent.hook.sendMessage("Sent gemini output to bot spam channel: $link").setEphemeral(true).queue()
         } catch (e: Exception) {
             log.error("Error executing /gemini", e)
             commandEvent.hook.sendMessage("Error while calling Gemini: ${e.message}").setEphemeral(true).queue()

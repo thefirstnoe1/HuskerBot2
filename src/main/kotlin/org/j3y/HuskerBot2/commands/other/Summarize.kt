@@ -32,7 +32,7 @@ class Summarize(
     )
 
     override fun execute(commandEvent: SlashCommandInteractionEvent) {
-        commandEvent.deferReply().queue()
+        commandEvent.deferReply(true).queue()
         try {
             val channel = try {
                 commandEvent.channel.asGuildMessageChannel()

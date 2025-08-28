@@ -45,7 +45,7 @@ class SummarizeTest {
 
         val union = Mockito.mock(MessageChannelUnion::class.java)
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
@@ -78,7 +78,7 @@ class SummarizeTest {
         @Suppress("UNCHECKED_CAST")
         val rest = Mockito.mock(RestAction::class.java) as RestAction<List<Message>>
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
@@ -121,7 +121,7 @@ class SummarizeTest {
         val m4 = mockMessage("charlie", false, "Hi @everyone and @here")
         val fetched = listOf(m4, m3, m2, m1) // newest->oldest
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
@@ -196,7 +196,7 @@ class SummarizeTest {
         val opt = Mockito.mock(net.dv8tion.jda.api.interactions.commands.OptionMapping::class.java)
         `when`(opt.asLong).thenReturn(1000L) // request way above max
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(event.getOption("count")).thenReturn(opt)
@@ -257,7 +257,7 @@ class SummarizeTest {
 
         val m1 = mockMessage("alice", false, "hi")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
@@ -311,7 +311,7 @@ class SummarizeTest {
 
         val m1 = mockMessage("alice", false, "hi")
 
-        `when`(event.deferReply()).thenReturn(replyAction)
+        `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(event.channel).thenReturn(union)
         `when`(union.asGuildMessageChannel()).thenReturn(channel)
