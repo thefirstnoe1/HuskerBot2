@@ -147,7 +147,7 @@ class SocialEmbedFixerListenerTest {
     @Test
     fun `does nothing when urls already on target domains or no relevant urls`() {
         val listener = SocialEmbedFixerListener()
-        val alreadyGood = "Here are good ones https://fxtwitter.com/a/b https://vxtiktok.com/x/y https://kkinstagram.com/p/1 https://embedez.seria.moe/embed?url=foo https://rxddit.com/r/a"
+        val alreadyGood = "Here are good ones https://fxtwitter.com/a/b https://vxtiktok.com/x/y https://kkinstagram.com/p/1 https://embedez.seria.moe/embed?url=foo https://rxddit.com/r/a https://fxbsky.app/profile/handle/post/123"
         val (event1, message1, _) = basicEventWithMessage(alreadyGood)
         listener.onMessageReceived(event1)
         Mockito.verify(message1, Mockito.never()).suppressEmbeds(true)
@@ -158,5 +158,21 @@ class SocialEmbedFixerListenerTest {
         listener.onMessageReceived(event2)
         Mockito.verify(message2, Mockito.never()).suppressEmbeds(true)
         Mockito.verify(message2.channel, Mockito.never()).sendMessage(Mockito.anyString())
+    }
+    @Test
+    fun `converts bluesky links to fxbsky`() {
+        val listener = SocialEmbedFixerListener()
+        val input = "Check https://bsky.app/profile/handle.example/post/3k4l5m and https://www.bsky.app/profile/did:plc:abc123/post/xyz"
+        val (event, message, _) = basicEventWithMessage(input)
+
+        listener.onMessageReceived(event)
+
+        val captor = ArgumentCaptor.forClass(String::class.java)
+        Mockito.verify(message.channel).sendMessage(captor.capture())
+        val posted = captor.value.trim()
+        val contentOnly = posted.substringAfter("posted:").trim()
+        val lines = contentOnly.split('\n').filter { it.isNotBlank() }
+
+        assertTrue(lines.all { it.startsWith("https://fxbsky.app/") })
     }
 }
