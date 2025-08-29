@@ -153,20 +153,22 @@ class BetLeaderboardTest {
         Mockito.verify(replyEmbedAction).queue()
 
         val embed = embedCaptor.value
-        // Expect two fields: 20 + 5 users
-        assertEquals(2, embed.fields.size)
+        // Expect three fields split by 10, 10 + 10 + 5
+        assertEquals(3, embed.fields.size)
         assertEquals("Leaderboard", embed.fields[0].name)
         assertEquals("Leaderboard (cont.)", embed.fields[1].name)
 
         val firstLines = (embed.fields[0].value ?: "").lines()
         val secondLines = (embed.fields[1].value ?: "").lines()
-        assertEquals(20, firstLines.size)
-        assertEquals(5, secondLines.size)
+        val thirdLines = (embed.fields[2].value ?: "").lines()
+        assertEquals(10, firstLines.size)
+        assertEquals(10, secondLines.size)
+        assertEquals(5, thirdLines.size)
 
         // First line should be 🥇 for the highest points (user 1 with 25 pts constructed)
         assertTrue(firstLines[0].startsWith("🥇 "))
         // The 21st entry (first of second chunk) should start with "21." numbering
-        assertTrue(secondLines[0].startsWith("21."))
+        assertTrue(thirdLines[0].startsWith("21\\."))
     }
 
     @Test

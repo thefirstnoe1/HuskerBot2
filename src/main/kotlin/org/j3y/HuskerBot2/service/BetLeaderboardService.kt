@@ -53,28 +53,23 @@ class BetLeaderboardService {
         setDescription("Scoring: Winner = 1, Spread = 2, Over/Under = 2")
 
         val ranking = computeTotals(bets)
-
-        // Compute ranks with tie handling: same points -> same rank, with standard competition ranking (1,1,3)
-        val ranksByIndex = mutableListOf<Int>()
-        var currentRank = 0
-        var i = 0
-        while (i < ranking.size) {
-            val thisPoints = ranking[i].second.points
-            val tieGroupSize = ranking.drop(i).takeWhile { it.second.points == thisPoints }.size
-            // The rank is the position in the list (1-based) before this tie group
-            currentRank = i + 1
-            repeat(tieGroupSize) { ranksByIndex.add(currentRank) }
-            i += tieGroupSize
-        }
-
+        var lastScore = 0
+        var lastRank = 0
         val lines = ranking.mapIndexed { index, (userId, totals) ->
-            val rank = ranksByIndex[index]
+            var rank = index + 1
+            if (totals.points == lastScore) {
+                rank = lastRank
+            }
+            lastRank = rank
+            lastScore = totals.points
+
             val medal = when (rank) {
                 1 -> "🥇"
                 2 -> "🥈"
                 3 -> "🥉"
-                else -> "$rank."
+                else -> "$rank\\."
             }
+
             val displayName = try {
                 guild?.retrieveMember(UserSnowflake.fromId(userId))?.complete()?.effectiveName
             } catch (_: Exception) { null } ?: totals.userTag.ifBlank { userId.toString() }
@@ -85,7 +80,7 @@ class BetLeaderboardService {
         if (lines.isEmpty()) {
             addField("Leaderboard", "No scored bets yet.", false)
         } else {
-            lines.chunked(20).forEachIndexed { idx, chunk ->
+            lines.chunked(10).forEachIndexed { idx, chunk ->
                 val name = if (idx == 0) "Leaderboard" else "Leaderboard (cont.)"
                 addField(name, chunk.joinToString("\n"), false)
             }
