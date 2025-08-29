@@ -90,6 +90,5 @@ class CountdownTest {
         val parts = desc!!.split("\n")
         assertTrue(parts.isNotEmpty(), "Description should not be empty")
         assertTrue(firstLineRegex.matches(parts[0]), "First line did not match expected countdown format: '${parts[0]}'")
-        assertTrue(parts.size >= 2 && parts[1].startsWith("Kickoff:"), "Second line should start with 'Kickoff:' but was: '${parts.getOrNull(1)}'")
     }
 }

@@ -52,7 +52,7 @@ class Countdown : SlashCommand() {
         val embed = EmbedBuilder()
             .setTitle("Countdown to $title")
             .setColor(Color.RED)
-            .setDescription("There are $days days, $hours hours, $minutes minutes and $seconds seconds until game time!\nKickoff: $formattedDate")
+            .setDescription("There are $days days, $hours hours, $minutes minutes and $seconds seconds until game time!")
             .addField("Kickoff", formattedDate, true)
             .addField("Home/Away", upcoming.venueType.replaceFirstChar { it.titlecase() }, true)
             .addField("Location", upcoming.location, true)
