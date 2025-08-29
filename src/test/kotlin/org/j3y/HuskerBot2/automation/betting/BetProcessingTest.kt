@@ -28,6 +28,12 @@ class BetProcessingTest {
 
     private val mapper = ObjectMapper()
 
+    private fun setPrivateField(target: Any, fieldName: String, value: Any?) {
+        val field = target.javaClass.getDeclaredField(fieldName)
+        field.isAccessible = true
+        field.set(target, value)
+    }
+
     @BeforeEach
     fun setup() {
         betProcessing = BetProcessing()
@@ -36,10 +42,11 @@ class BetProcessingTest {
         scheduleRepo = Mockito.mock(ScheduleRepo::class.java)
         jda = Mockito.mock(JDA::class.java)
 
-        // Inject mocks
-        betProcessing.cfbBettingLinesService = cfbBettingLinesService
-        betProcessing.betRepo = betRepo
-        betProcessing.scheduleRepo = scheduleRepo
+        // Inject mocks (use reflection for private fields)
+        setPrivateField(betProcessing, "cfbBettingLinesService", cfbBettingLinesService)
+        setPrivateField(betProcessing, "betRepo", betRepo)
+        setPrivateField(betProcessing, "scheduleRepo", scheduleRepo)
+        // jda property is not private in BetProcessing; set directly
         betProcessing.jda = jda
     }
 

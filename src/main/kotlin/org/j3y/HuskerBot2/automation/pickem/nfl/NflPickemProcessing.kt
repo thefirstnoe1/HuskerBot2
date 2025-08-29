@@ -289,7 +289,7 @@ class NflPickemProcessing {
             nflGameRepo.save(game)
 
             val gamePicks = nflPickRepo.findByGameId(game.id)
-            gamePicks.forEach { this.processPick(it, game) }
+            gamePicks.filter { !it.processed }.forEach { this.processPick(it, game) }
             nflPickRepo.saveAll(gamePicks)
         }
     }

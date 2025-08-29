@@ -6,13 +6,14 @@ import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
 import org.j3y.HuskerBot2.model.BetEntity
 import org.j3y.HuskerBot2.repository.BetRepo
 import org.j3y.HuskerBot2.repository.ScheduleRepo
+import org.j3y.HuskerBot2.service.BetLeaderboardService
+import org.j3y.HuskerBot2.util.SeasonResolver
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import java.time.LocalDate
 
 class BetLeaderboardTest {
 
@@ -27,11 +28,12 @@ class BetLeaderboardTest {
         scheduleRepo = Mockito.mock(ScheduleRepo::class.java)
         leaderboard.betRepo = betRepo
         leaderboard.scheduleRepo = scheduleRepo
+        leaderboard.leaderboardService = BetLeaderboardService()
     }
 
     @Test
     fun `execute replies with message when no bets found for season`() {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
 
@@ -47,7 +49,7 @@ class BetLeaderboardTest {
 
     @Test
     fun `execute builds embed with aggregated scores sorted and medalized`() {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyEmbedAction = Mockito.mock(ReplyCallbackAction::class.java)
 
@@ -115,7 +117,7 @@ class BetLeaderboardTest {
 
     @Test
     fun `execute chunks leaderboard into multiple fields when more than 20 users`() {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyEmbedAction = Mockito.mock(ReplyCallbackAction::class.java)
 
@@ -167,7 +169,7 @@ class BetLeaderboardTest {
 
     @Test
     fun `execute falls back to userId string when userTag is blank`() {
-        val season = LocalDate.now().year
+        val season = SeasonResolver.currentCfbSeason()
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyEmbedAction = Mockito.mock(ReplyCallbackAction::class.java)
 
