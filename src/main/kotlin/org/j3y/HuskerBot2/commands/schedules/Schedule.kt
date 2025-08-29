@@ -9,10 +9,11 @@ class Schedule : SlashCommand() {
     @Autowired lateinit var cfbSched: CfbSched
     @Autowired lateinit var nflSched: NflSched
     @Autowired lateinit var vbSched: VbSched
+    @Autowired lateinit var cfbHuskersSched: CfbHuskersSched
 
     override fun getCommandKey(): String = "schedule"
     override fun getDescription(): String = "Schedule commands"
     override fun getSubcommands(): List<SlashCommand> = listOf(
-        cfbSched, nflSched, vbSched
+        cfbSched, cfbHuskersSched, nflSched, vbSched
     )
 }
