@@ -1,20 +1,23 @@
 package org.j3y.HuskerBot2.commands.schedules
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
-import org.j3y.HuskerBot2.service.EspnService
+import net.dv8tion.jda.internal.entities.GuildImpl
+import net.dv8tion.jda.internal.entities.MemberImpl
+import net.dv8tion.jda.internal.entities.UserImpl
+import org.j3y.HuskerBot2.model.ScheduleEntity
+import org.j3y.HuskerBot2.repository.ScheduleRepo
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
+import java.time.Instant
 
 class CountdownTest {
 
@@ -22,9 +25,19 @@ class CountdownTest {
         val event = Mockito.mock(SlashCommandInteractionEvent::class.java)
         val replyAction = Mockito.mock(ReplyCallbackAction::class.java)
         val hook = Mockito.mock(InteractionHook::class.java)
+        val member = Mockito.mock(Member::class.java)
+        val user = Mockito.mock(UserImpl::class.java)
         `when`(event.deferReply()).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
+        `when`(event.member).thenReturn(member)
+        `when`(event.user).thenReturn(user)
         return Triple(event, replyAction, hook)
+    }
+
+    // Kotlin-safe Mockito any() helper for non-null Instant parameters
+    private fun anyInstant(): Instant {
+        Mockito.any(Instant::class.java)
+        return Instant.now()
     }
 
     @Test
@@ -39,8 +52,8 @@ class CountdownTest {
     @Test
     fun `execute builds embed and sends countdown`() {
         val cmd = Countdown()
-        val espn = Mockito.mock(EspnService::class.java)
-        cmd.espnService = espn
+        val scheduleRepo = Mockito.mock(ScheduleRepo::class.java)
+        cmd.scheduleRepo = scheduleRepo
 
         val (event, replyAction, hook) = setupEvent()
         @Suppress("UNCHECKED_CAST")
@@ -49,29 +62,20 @@ class CountdownTest {
         val embedCaptor = ArgumentCaptor.forClass(MessageEmbed::class.java)
         `when`(hook.sendMessageEmbeds(embedCaptor.capture())).thenReturn(msgAction)
 
-        // Prepare a future date so the duration is positive and deterministic-enough for format
-        val futureDate = OffsetDateTime.now().plusDays(1).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-        val json = """
-            {
-              "team": {
-                "nextEvent": [
-                  {
-                    "name": "Nebraska vs. Opponent",
-                    "date": "$futureDate"
-                  }
-                ]
-              }
-            }
-        """.trimIndent()
-        val apiJson = ObjectMapper().readTree(json)
-        `when`(espn.getTeamData("nebraska")).thenReturn(apiJson)
+        // Prepare a future instant and schedule entity
+        val futureInstant = Instant.now().plusSeconds(24 * 60 * 60) // +1 day
+        val sched = ScheduleEntity(
+            id = 1,
+            opponent = "Opponent",
+            dateTime = futureInstant
+        )
+        `when`(scheduleRepo.findFirstByDateTimeAfterOrderByDateTimeAsc(anyInstant())).thenReturn(sched)
 
         // Execute
         cmd.execute(event)
 
         // Verify interactions
         Mockito.verify(replyAction).queue()
-        Mockito.verify(espn).getTeamData("nebraska")
         Mockito.verify(hook).sendMessageEmbeds(Mockito.any(MessageEmbed::class.java))
         Mockito.verify(msgAction).queue()
 
@@ -81,8 +85,11 @@ class CountdownTest {
         assertEquals("Countdown to Nebraska vs. Opponent", embed.title)
         val desc = embed.description
         assertNotNull(desc)
-        // Expect description like: There are X days, Y hours, Z minutes and W seconds til gameday!
-        val regex = Regex("There are \\d+ days, \\d+ hours, \\d+ minutes and \\d+ seconds til game time!")
-        assertTrue(regex.matches(desc!!), "Description did not match expected countdown format: '$desc'")
+        // Expect description to include countdown line and a kickoff formatted date-time line.
+        val firstLineRegex = Regex("There are \\d+ days, \\d+ hours, \\d+ minutes and \\d+ seconds until game time!")
+        val parts = desc!!.split("\n")
+        assertTrue(parts.isNotEmpty(), "Description should not be empty")
+        assertTrue(firstLineRegex.matches(parts[0]), "First line did not match expected countdown format: '${parts[0]}'")
+        assertTrue(parts.size >= 2 && parts[1].startsWith("Kickoff:"), "Second line should start with 'Kickoff:' but was: '${parts.getOrNull(1)}'")
     }
 }
