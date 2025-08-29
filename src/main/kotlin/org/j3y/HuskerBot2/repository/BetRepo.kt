@@ -8,7 +8,7 @@ import java.util.Optional
 
 @Repository
 interface BetRepo : JpaRepository<BetEntity, BetId> {
-    fun findByUserIdAndSeasonAndWeek(userId: Long, season: Int, week: Int): Optional<BetEntity>
+    fun findByUserIdAndSeasonAndWeek(userId: Long, season: Int, week: Int): BetEntity?
     fun findBySeasonAndWeek(season: Int, week: Int): List<BetEntity>
     fun findBySeason(season: Int): List<BetEntity>
 }

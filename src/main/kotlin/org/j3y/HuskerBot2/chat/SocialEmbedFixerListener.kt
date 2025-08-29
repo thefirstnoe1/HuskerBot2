@@ -32,7 +32,7 @@ class SocialEmbedFixerListener : ListenerAdapter() {
                 val lower = url.lowercase()
                 when {
                     // Skip if already using better domains
-                    lower.contains("fxtwitter.com") || lower.contains("vxtiktok.com") || lower.contains("kkinstagram.com") || lower.contains("embedez.seria.moe") || lower.contains("rxddit.com") -> null
+                    lower.contains("fxtwitter.com") || lower.contains("vxtiktok.com") || lower.contains("kkinstagram.com") || lower.contains("embedez.seria.moe") || lower.contains("rxddit.com") || lower.contains("fxbsky.app") -> null
 
                     // Twitter/X -> fxtwitter
                     lower.contains("://twitter.com/") || lower.contains("://www.twitter.com/") ||
@@ -49,6 +49,11 @@ class SocialEmbedFixerListener : ListenerAdapter() {
                     lower.contains("://instagram.com/") || lower.contains("://www.instagram.com/") ->
                         url.replace(Regex("^(https?://)(?:www\\.)?instagram\\.com", RegexOption.IGNORE_CASE),
                             "$1kkinstagram.com")
+
+                    // Bluesky -> fxbsky
+                    lower.contains("://bsky.app/") || lower.contains("://www.bsky.app/") ->
+                        url.replace(Regex("^(https?://)(?:www\\.)?bsky\\.app", RegexOption.IGNORE_CASE),
+                            "$1fxbsky.app")
 
                     // Facebook -> embedez service
                     lower.contains("://facebook.com/share/r/") || lower.contains("://www.facebook.com/share/r/") ||
