@@ -99,8 +99,10 @@ class BetLeaderboardTest {
         // Verify medal order and summaries
         assertTrue(lines[0].startsWith("🥇 "))
         assertTrue(lines[1].startsWith("🥈 "))
+        // Ties are ranked with standard competition ranking; users with same points share the same rank.
+        // For this dataset, lines[2] and lines[3] should both be rank 3 (🥉) rather than having a "4." line.
         assertTrue(lines[2].startsWith("🥉 "))
-        assertTrue(lines[3].startsWith("4."))
+        assertTrue(lines[3].startsWith("🥉 "))
 
         // Check that user 1 line contains points and breakdown
         assertTrue(lines[0].contains("— 5 pts"))
