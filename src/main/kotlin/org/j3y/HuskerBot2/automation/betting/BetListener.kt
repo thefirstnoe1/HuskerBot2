@@ -44,8 +44,8 @@ class BetListener : ListenerAdapter() {
             }
 
             val bet = betRepo.findByUserIdAndSeasonAndWeek(event.user.idLong, season, pickWeek)
-                ?: BetEntity(event.user.idLong, season, pickWeek)
-
+                ?: BetEntity(event.user.idLong, season, pickWeek, event.user.asTag)
+            bet.userTag = event.user.asTag
             log.info("Bet type: $pickType with Value: $pickValue")
 
             when (pickType) {
