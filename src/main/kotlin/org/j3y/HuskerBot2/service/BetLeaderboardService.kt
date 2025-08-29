@@ -67,8 +67,9 @@ class BetLeaderboardService {
                 1 -> "🥇"
                 2 -> "🥈"
                 3 -> "🥉"
-                else -> "$rank."
+                else -> "$rank\\."
             }
+
             val displayName = try {
                 guild?.retrieveMember(UserSnowflake.fromId(userId))?.complete()?.effectiveName
             } catch (_: Exception) { null } ?: totals.userTag.ifBlank { userId.toString() }
@@ -79,7 +80,7 @@ class BetLeaderboardService {
         if (lines.isEmpty()) {
             addField("Leaderboard", "No scored bets yet.", false)
         } else {
-            lines.chunked(20).forEachIndexed { idx, chunk ->
+            lines.chunked(10).forEachIndexed { idx, chunk ->
                 val name = if (idx == 0) "Leaderboard" else "Leaderboard (cont.)"
                 addField(name, chunk.joinToString("\n"), false)
             }
