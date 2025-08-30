@@ -10,6 +10,10 @@ import org.mockito.Mockito.`when`
 
 class HuskBubblesListenerTest {
 
+    val emojiSupplier: () -> Set<Emoji> = {
+        setOf(Emoji.fromUnicode("🫧"))
+    }
+
     private fun eventWithAuthor(
         id: Long,
         isBot: Boolean = false,
@@ -31,7 +35,7 @@ class HuskBubblesListenerTest {
     @Test
     fun `ignores bot authors`() {
         val (event, message, _) = eventWithAuthor(id = 598039388148203520L, isBot = true)
-        val listener = HuskBubblesListener { 0.0 } // would trigger, but bot check should short-circuit
+        val listener = HuskBubblesListener({ 0.0 }, emojiSupplier) // would trigger, but bot check should short-circuit
         listener.onMessageReceived(event)
         Mockito.verify(message, Mockito.never()).addReaction(Mockito.any(Emoji::class.java))
     }
@@ -39,7 +43,7 @@ class HuskBubblesListenerTest {
     @Test
     fun `ignores system authors`() {
         val (event, message, _) = eventWithAuthor(id = 598039388148203520L, isSystem = true)
-        val listener = HuskBubblesListener { 0.0 }
+        val listener = HuskBubblesListener({ 0.0 }, emojiSupplier)
         listener.onMessageReceived(event)
         Mockito.verify(message, Mockito.never()).addReaction(Mockito.any(Emoji::class.java))
     }
@@ -47,7 +51,7 @@ class HuskBubblesListenerTest {
     @Test
     fun `ignores messages from non-target user`() {
         val (event, message, _) = eventWithAuthor(id = 1234567890L)
-        val listener = HuskBubblesListener { 0.0 }
+        val listener = HuskBubblesListener({ 0.0 }, emojiSupplier)
         listener.onMessageReceived(event)
         Mockito.verify(message, Mockito.never()).addReaction(Mockito.any(Emoji::class.java))
     }
@@ -55,7 +59,7 @@ class HuskBubblesListenerTest {
     @Test
     fun `does not react when probability is above threshold`() {
         val (event, message, _) = eventWithAuthor(id = 598039388148203520L)
-        val listener = HuskBubblesListener { 0.50 } // 50% > 5%, so should not react
+        val listener = HuskBubblesListener({ 0.50 }, emojiSupplier) // 50% > 5%, so should not react
         listener.onMessageReceived(event)
         Mockito.verify(message, Mockito.never()).addReaction(Mockito.any(Emoji::class.java))
     }
@@ -63,7 +67,7 @@ class HuskBubblesListenerTest {
     @Test
     fun `reacts with bubbles when probability is below threshold`() {
         val (event, message, _) = eventWithAuthor(id = 598039388148203520L)
-        val listener = HuskBubblesListener { 0.01 } // 1% < 5%, should react
+        val listener = HuskBubblesListener({ 0.01 }, emojiSupplier) // 1% < 5%, should react
         listener.onMessageReceived(event)
 
         // Verify reaction with the bubbles emoji was attempted
