@@ -51,13 +51,16 @@ class WeatherService(
             val hoursUntilGame = ChronoUnit.HOURS.between(now, targetDate)
             val daysUntilGame = ChronoUnit.DAYS.between(now, targetDate)
             
-            // Use Tomorrow Weather API if within 5 days (120 hours), otherwise fallback to NWS
-            return if (daysUntilGame <= 5) {
-                log.info("Using Tomorrow Weather API for forecast $daysUntilGame days out")
+            // Use Tomorrow Weather API if within 120 hours, otherwise fallback to NWS
+            return if (hoursUntilGame <= 120) {
+                log.info("Using Tomorrow Weather API for forecast $hoursUntilGame hours out")
                 getTomorrowWeatherForecast(latitude, longitude, targetDate, hoursUntilGame)
-            } else {
-                log.info("Using NWS API for forecast $daysUntilGame days out (beyond Tomorrow Weather 5-day limit)")
+            } else if (daysUntilGame <= 7) {
+                log.info("Using NWS API for forecast $daysUntilGame days out (beyond Tomorrow Weather 120-hour limit)")
                 getNWSWeatherForecast(latitude, longitude, targetDate)
+            } else {
+                log.warn("Game is $daysUntilGame days out - beyond reliable weather forecast range (7 days)")
+                null
             }
         } catch (e: Exception) {
             log.error("Error getting weather forecast for $latitude, $longitude", e)
