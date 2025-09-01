@@ -41,10 +41,7 @@ class GamedayWeather : SlashCommand() {
                 return
             }
             
-            if (!isGameWithinWeek(nextGame.dateTime)) {
-                commandEvent.hook.sendMessage("Game is beyond 14-day weather forecast range.").queue()
-                return
-            }
+            // Let WeatherService handle the API selection and fallback logic
             
             val gameLocation = getGameLocation(nextGame)
             val coordinates = weatherService.getCoordinates(gameLocation)
@@ -59,6 +56,11 @@ class GamedayWeather : SlashCommand() {
                 coordinates.longitude, 
                 gameDateTime
             )
+            
+            if (weather == null) {
+                commandEvent.hook.sendMessage("Weather forecast unavailable for this game date. The game may be too far in the future.").queue()
+                return
+            }
             
             val embed = createWeatherEmbed(nextGame, weather)
             commandEvent.hook.sendMessageEmbeds(embed).queue()
@@ -87,13 +89,7 @@ class GamedayWeather : SlashCommand() {
             null
         }
     }
-    
-    private fun isGameWithinWeek(gameDateTime: Instant): Boolean {
-        val gameDate = LocalDateTime.ofInstant(gameDateTime, ZoneId.systemDefault())
-        val now = LocalDateTime.now()
-        val daysUntilGame = ChronoUnit.DAYS.between(now, gameDate)
-        return daysUntilGame <= 14 && daysUntilGame >= 0
-    }
+
     
     private fun getGameLocation(scheduleEntity: ScheduleEntity): String {
         return when {
@@ -150,7 +146,7 @@ class GamedayWeather : SlashCommand() {
             embed.addField("⚠️ Weather", "Weather data unavailable", false)
         }
         
-        embed.setFooter("Weather data from Tomorrow.io & National Weather Service")
+        embed.setFooter("Weather data from Tomorrow.io (≤120 hours) or National Weather Service (>120 hours)")
         embed.setTimestamp(Instant.now())
         
         return embed.build()
