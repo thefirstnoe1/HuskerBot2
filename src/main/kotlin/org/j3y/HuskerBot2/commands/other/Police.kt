@@ -25,19 +25,20 @@ class Police : SlashCommand() {
         }
 
         val message = buildString {
-            append("Wee woo, wee woo!Halt!")
-            append("🚨 NANI 🚨..")
-            append("🚨 THE 🚨...")
-            append("🚨 FUCK 🚨....")
-            append("🚨 DID 🚨.....")
-            append("🚨 YOU 🚨....")
-            append("🚨 JUST 🚨...")
-            append("🚨 SAY 🚨..")
-            append("🚨 ${arrestee.asMention} 🚨")
-            append("🚨🚨🚨🚨🚨🚨🚨🚨🚨")
-            append("👮‍📢 Information ℹ provided in the VIP 👑 Room 🏆 is intended for Husker247 🌽🎈 members only ‼🔫. ")
-            append("Please do not copy ✏ and paste 🖨 or summarize this content elsewhere‼ ")
-            append("Please try to keep all replies in this thread 🧵 for Husker247 members only! 🚫 ⛔ 👎 🙅‍♀️")
+            append("Wee woo, wee woo!\n")
+            append("Halt!\n")
+            append("🚨 NANI 🚨..\n")
+            append("🚨 THE 🚨...\n")
+            append("🚨 FUCK 🚨....\n")
+            append("🚨 DID 🚨.....\n")
+            append("🚨 YOU 🚨....\n")
+            append("🚨 JUST 🚨...\n")
+            append("🚨 SAY 🚨..\n")
+            append("🚨 ${arrestee.asMention} 🚨\n")
+            append("🚨🚨🚨🚨🚨🚨🚨🚨🚨\n")
+            append("👮‍📢 Information ℹ provided in the VIP 👑 Room 🏆 is intended for Husker247 🌽🎈 members only ‼🔫. \n")
+            append("Please do not copy ✏ and paste 🖨 or summarize this content elsewhere‼ \n")
+            append("Please try to keep all replies in this thread 🧵 for Husker247 members only! 🚫 ⛔ 👎 🙅‍♀️\n")
             append("Thanks for your cooperation. 😍🤩😘")
         }
 
