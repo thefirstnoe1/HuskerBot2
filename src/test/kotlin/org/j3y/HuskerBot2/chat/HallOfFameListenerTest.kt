@@ -17,13 +17,15 @@ class HallOfFameListenerTest {
     
     private val hallOfFameChannelId = "487431877792104470"
     private val hallOfShameChannelId = "860686057850798090"
+    private val ignoredChannelId = ""
     
     private lateinit var listener: HallOfFameListener
     
     private fun createEventWithReactions(
         messageId: String = "123456789",
         isBot: Boolean = false,
-        reactions: List<MessageReaction> = emptyList()
+        reactions: List<MessageReaction> = emptyList(),
+        channelId: String = "defaultChannelId"
     ): Triple<MessageReactionAddEvent, Message, Guild> {
         val event = mock(MessageReactionAddEvent::class.java)
         val message = mock(Message::class.java, RETURNS_DEEP_STUBS)
@@ -35,6 +37,7 @@ class HallOfFameListenerTest {
         `when`(event.user).thenReturn(user)
         `when`(event.messageId).thenReturn(messageId)
         `when`(event.retrieveMessage()).thenReturn(retrieveAction)
+        `when`(event.channel).thenReturn(messageChannel)
         `when`(retrieveAction.complete()).thenReturn(message)
         
         `when`(user.isBot).thenReturn(isBot)
@@ -48,6 +51,7 @@ class HallOfFameListenerTest {
         `when`(message.reactions).thenReturn(reactions)
         
         `when`(messageChannel.asMention).thenReturn("<#456789>")
+        `when`(messageChannel.id).thenReturn(channelId)
         `when`(guild.iconUrl).thenReturn("https://example.com/icon.png")
         
         return Triple(event, message, guild)
@@ -67,7 +71,7 @@ class HallOfFameListenerTest {
     
     @BeforeEach
     fun setUp() {
-        listener = HallOfFameListener(hallOfFameChannelId, hallOfShameChannelId)
+        listener = HallOfFameListener(hallOfFameChannelId, hallOfShameChannelId, ignoredChannelId)
     }
     
     @Test
@@ -182,5 +186,28 @@ class HallOfFameListenerTest {
         
         verify(hallOfShameChannel).sendMessageEmbeds(any<MessageEmbed>())
         verify(hallOfFameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
+    }
+    
+    @Test
+    fun `should ignore reactions from specified ignored channel`() {
+        val ignoredChannelId = "123456789"
+        val listenerWithIgnoredChannel = HallOfFameListener(hallOfFameChannelId, hallOfShameChannelId, ignoredChannelId)
+        
+        val reaction = createReaction("fire", 10)
+        val (event, _, guild) = createEventWithReactions(reactions = listOf(reaction), channelId = ignoredChannelId)
+        
+        val hallOfFameChannel = mock(TextChannel::class.java)
+        val hallOfShameChannel = mock(TextChannel::class.java)
+        
+        `when`(guild.getTextChannelById(hallOfFameChannelId)).thenReturn(hallOfFameChannel)
+        `when`(guild.getTextChannelById(hallOfShameChannelId)).thenReturn(hallOfShameChannel)
+        
+        assertDoesNotThrow {
+            listenerWithIgnoredChannel.onMessageReactionAdd(event)
+        }
+        
+        verify(hallOfFameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
+        verify(hallOfShameChannel, never()).sendMessageEmbeds(any<MessageEmbed>())
+        verify(event, never()).retrieveMessage()
     }
 }

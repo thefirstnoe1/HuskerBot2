@@ -13,7 +13,8 @@ import java.time.Instant
 @Component
 class HallOfFameListener(
     @Value("\${discord.channels.hall-of-fame}") private val hallOfFameChannelId: String,
-    @Value("\${discord.channels.hall-of-shame}") private val hallOfShameChannelId: String
+    @Value("\${discord.channels.hall-of-shame}") private val hallOfShameChannelId: String,
+    @Value("\${discord.channels.hall-of-fame-ignored:}") private val ignoredChannelId: String
 ) : ListenerAdapter() {
     
     private final val log = LoggerFactory.getLogger(HallOfFameListener::class.java)
@@ -27,6 +28,9 @@ class HallOfFameListener(
         try {
             // Skip if bot reaction
             if (event.user?.isBot == true) return
+            
+            // Skip if message is in ignored channel
+            if (ignoredChannelId.isNotEmpty() && event.channel.id == ignoredChannelId) return
             
             val messageId = event.messageId
             val message = event.retrieveMessage().complete()
