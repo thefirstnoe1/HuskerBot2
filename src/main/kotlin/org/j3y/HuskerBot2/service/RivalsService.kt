@@ -7,7 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class RivalsService {
-    private val url = "https://www.on3.com/_next/data/B6o5wzgOQ5dNJQbbZj248/rivals/search.json?searchText={name}&minClassYear={year}&maxClassYear={year}&sportKey=1"
+    private val url = "https://www.on3.com/_next/data/{buildId}/rivals/search.json?searchText={name}&minClassYear={year}&maxClassYear={year}&sportKey=1"
     private val client = RestTemplate()
 
     data class RecruitData(
@@ -30,8 +30,25 @@ class RivalsService {
         val link: String
     )
 
+    /**
+     * Calls the Rivals search page and extracts the Next.js buildId value from the embedded JSON.
+     * @return buildId string if found, otherwise null
+     */
+    fun fetchBuildId(): String? {
+        return try {
+            val html = client.getForObject("https://www.on3.com/rivals/search/", String::class.java) ?: return null
+            // Look for "buildId":"..." allowing for minified content
+            val regex = Regex("\\\"buildId\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+            val match = regex.find(html)
+            match?.groups?.get(1)?.value
+        } catch (ex: Exception) {
+            null
+        }
+    }
+
     fun getRecruitData(year: Int, name: String): RecruitData? {
-        val uri = UriComponentsBuilder.fromUriString(url).buildAndExpand(name, year, year).toUri()
+        val buildId = fetchBuildId() ?: return null
+        val uri = UriComponentsBuilder.fromUriString(url).buildAndExpand(buildId, name, year, year).toUri()
         val response = client.getForObject(uri, JsonNode::class.java)
 
         val recruit = response?.at("/pageProps/searchData/list/0") ?: return null
