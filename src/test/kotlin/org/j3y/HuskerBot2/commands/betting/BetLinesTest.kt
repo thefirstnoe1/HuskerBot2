@@ -8,13 +8,12 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.Command
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
-import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
 import net.dv8tion.jda.api.interactions.InteractionHook
 import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.repository.ScheduleRepo
-import org.j3y.HuskerBot2.service.EspnService
+import org.j3y.HuskerBot2.service.CfbBettingLinesService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,7 +27,7 @@ class BetLinesTest {
 
     private lateinit var betLines: BetLines
     private lateinit var scheduleRepo: ScheduleRepo
-    private lateinit var espnService: EspnService
+    private lateinit var cfbBettingLinesService: CfbBettingLinesService
 
     private val mapper = ObjectMapper()
 
@@ -36,9 +35,9 @@ class BetLinesTest {
     fun setup() {
         betLines = BetLines()
         scheduleRepo = Mockito.mock(ScheduleRepo::class.java)
-        espnService = Mockito.mock(EspnService::class.java)
+        cfbBettingLinesService = Mockito.mock(CfbBettingLinesService::class.java)
         betLines.scheduleRepo = scheduleRepo
-        betLines.espnService = espnService
+        betLines.cfbBettingLinesService = cfbBettingLinesService
     }
 
     @Test
@@ -80,25 +79,20 @@ class BetLinesTest {
         val sched = ScheduleEntity(id = 10, opponent = "Iowa", season = season, week = 1, dateTime = Instant.now())
         `when`(scheduleRepo.findBySeasonAndWeek(season, 1)).thenReturn(sched)
 
-        // ESPN scoreboard JSON with Nebraska event and odds
+        // CFBD lines JSON with Nebraska game and odds
         val json = """
-            {
-              "events": [
-                {
-                  "name": "Nebraska Cornhuskers vs Iowa Hawkeyes",
-                  "competitions": [
-                    {
-                      "odds": [
-                        {"details": "Iowa -3.5", "spread": -3.5, "overUnder": 45.0}
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
+            [
+              {
+                "homeTeam": "Nebraska",
+                "awayTeam": "Iowa",
+                "lines": [
+                  {"provider": "consensus", "formattedSpread": "Nebraska -3.5", "spread": -3.5, "overUnder": 45.0}
+                ]
+              }
+            ]
         """.trimIndent()
         val node: JsonNode = mapper.readTree(json)
-        `when`(espnService.getCfbScoreboard(5, 1)).thenReturn(node)
+        `when`(cfbBettingLinesService.getLines(season, 1, "nebraska")).thenReturn(node)
 
         betLines.execute(event)
 
@@ -118,7 +112,7 @@ class BetLinesTest {
         assertEquals("1", fields["Week"])
         assertEquals("-3.5", fields["Spread"])
         assertEquals("45.0", fields["Over/Under"])
-        assertEquals("Iowa -3.5", fields["Details"]) // from ESPN odds
+        assertEquals("Nebraska -3.5", fields["Details"]) // from CFBD odds
         // Color and other visual properties are not asserted here
     }
 
@@ -141,12 +135,8 @@ class BetLinesTest {
         // we can simulate week=2 by making the method expect 2. We'll stick with default = 1 for simplicity.
         // But ensure our message uses that default. We'll still validate the message for week=1.
 
-        // Prepare ESPN data with no matching event
-        val json = """
-            {"events": [ {"name": "Some Other Team vs Opponent"} ]}
-        """.trimIndent()
-        val node: JsonNode = mapper.readTree(json)
-        `when`(espnService.getCfbScoreboard(5, 1)).thenReturn(node)
+        // Simulate no data returned from CFBD service
+        `when`(cfbBettingLinesService.getLines(season, 1, "nebraska")).thenReturn(null)
 
         betLines.execute(event)
 

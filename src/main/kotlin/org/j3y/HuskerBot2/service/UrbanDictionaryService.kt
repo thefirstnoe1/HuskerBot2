@@ -29,10 +29,10 @@ class UrbanDictionaryService(
     fun defineAll(term: String): List<UrbanDefinition> {
         return try {
             val uri = UriComponentsBuilder
-                .fromHttpUrl(baseUrl)
+                .fromUriString(baseUrl)
                 .path("/v0/define")
                 .queryParam("term", term)
-                .build(true)
+                .build(false)
                 .toUri()
 
             val headers = HttpHeaders()

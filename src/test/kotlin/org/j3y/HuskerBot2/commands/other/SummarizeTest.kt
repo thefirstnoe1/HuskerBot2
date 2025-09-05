@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
+import org.j3y.HuskerBot2.commands.ai.Summarize
 import org.j3y.HuskerBot2.service.GoogleGeminiService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
