@@ -51,7 +51,7 @@ class Inspire : SlashCommand() {
                 "$commandUserMention wants to be inspired:"
             }
 
-            commandEvent.hook.sendMessageEmbeds(EmbedBuilder().setDescription(message).setImage(imageUrl).build()).queue()
+            commandEvent.hook.sendMessage(message).addEmbeds(EmbedBuilder().setImage(imageUrl).build()).queue()
         } catch (e: Exception) {
             commandEvent.hook.sendMessage("Error calling InspiroBot: ${e.message}").queue()
         }
