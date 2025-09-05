@@ -41,6 +41,15 @@ class Summarize(
                 return
             }
 
+            // If channel is not visible to everyone (i.e., @everyone is denied VIEW_CHANNEL), warn ephemerally and return
+            val everyoneRole = channel.guild.publicRole
+            val everyoneOverride = channel.permissionContainer.getPermissionOverride(everyoneRole)
+            val hiddenForEveryone = everyoneOverride?.denied?.contains(net.dv8tion.jda.api.Permission.VIEW_CHANNEL) == true
+            if (hiddenForEveryone) {
+                commandEvent.hook.sendMessage("This channel isn't visible to everyone. Please use a public channel for summaries or adjust privacy.").queue()
+                return
+            }
+
             val requested = (commandEvent.getOption("count")?.asLong ?: 50L).toInt()
             val count = requested.coerceIn(1, 100)
 
