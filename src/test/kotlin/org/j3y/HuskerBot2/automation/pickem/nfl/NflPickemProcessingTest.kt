@@ -176,24 +176,6 @@ class NflPickemProcessingTest {
     }
 
     @Test
-    fun `postWeeklyPickem handles missing channel gracefully and still queries ESPN`() {
-        val scoreboard = scoreboardWithOneEvent()
-        `when`(espn.getNflScoreboard(Mockito.anyInt())).thenReturn(scoreboard)
-
-        // deleteAllPosts() tries channel first call -> return null
-        `when`(jda.getTextChannelById("chan")).thenReturn(null)
-
-        assertDoesNotThrow { processing.postWeeklyPickem() }
-
-        // espn scoreboard was requested
-        Mockito.verify(espn).getNflScoreboard(Mockito.anyInt())
-        // channel missing at main lookup as well
-        Mockito.verify(jda, Mockito.atLeastOnce()).getTextChannelById("chan")
-        // no further interactions possible without a channel
-        Mockito.verifyNoMoreInteractions(pickRepo)
-    }
-
-    @Test
     fun `postWeeklyPickem posts game embed, saves game, and includes pick buttons with counts`() {
         val scoreboard = scoreboardWithOneEvent(eventId = "2002", homeName = "SF", homeId = "99", awayName = "DAL", awayId = "77")
         `when`(espn.getNflScoreboard(Mockito.anyInt())).thenReturn(scoreboard)

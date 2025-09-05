@@ -1,20 +1,20 @@
-package org.j3y.HuskerBot2.commands.images
+package org.j3y.HuskerBot2.commands.ai
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
+import net.dv8tion.jda.api.utils.FileUpload
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.GoogleGeminiService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Component
-import net.dv8tion.jda.api.utils.FileUpload
 import org.springframework.beans.factory.annotation.Value
-import java.util.Base64
+import org.springframework.stereotype.Component
 
 @Component
 class AiImage : SlashCommand() {
-    @Autowired lateinit var gemini: GoogleGeminiService
+    @Autowired
+    lateinit var gemini: GoogleGeminiService
     @Value("\${discord.channels.bot-spam}") lateinit var botSpamChannelId: String
 
     override fun getCommandKey(): String = "ai-image"
@@ -33,10 +33,6 @@ class AiImage : SlashCommand() {
         commandEvent.deferReply(true).queue()
 
         val result = gemini.generateImage(prompt)
-        if (result == null) {
-            commandEvent.hook.sendMessage("Failed to generate image. Is Gemini configured?").queue()
-            return
-        }
 
         when (result) {
             is GoogleGeminiService.ImageResult.Error -> {
@@ -52,7 +48,8 @@ class AiImage : SlashCommand() {
                     return
                 }
 
-                val link = spamChannel.sendMessageEmbeds(EmbedBuilder()
+                val link = spamChannel.sendMessageEmbeds(
+                    EmbedBuilder()
                     .addField("Prompt", prompt, false)
                     .addField("Requested by", commandEvent.user.asMention, false)
                     .setFooter("This AI slop is brought to you by Gemini 2.0 flash")
