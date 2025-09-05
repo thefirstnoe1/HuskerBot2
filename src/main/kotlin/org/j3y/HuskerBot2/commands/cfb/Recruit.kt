@@ -78,6 +78,29 @@ class Recruit(
             .setFooter("Data via On3 Rivals - Consensus Rankings")
 
         log.info("Img: ${d.imageUrl}")
+
+        // Add prospects section if available
+        if (d.prospects.isNotEmpty()) {
+            val sorted = d.prospects.sortedByDescending { it.prediction }
+            val lines = mutableListOf<String>("TEAM - STATUS - PREDICTION (OFFICIAL / UNOFFICIAL VISITS)")
+            var totalLen = 0
+            val maxFieldLen = 1000 // keep under Discord's 1024 char limit for field values
+            for ((index, p) in sorted.withIndex()) {
+                if (index >= 5) break // show top 5
+                val team = p.teamName.ifBlank { "Unknown Team" }
+                val status = p.status.ifBlank { "Unknown" }
+                val pct = if (p.prediction <= 1.0) (p.prediction * 100.0) else p.prediction
+                val line = "- ${team} — ${status}, ${"%.0f".format(pct)}% (OV:${p.officialVisitCount} UV:${p.unofficialVisitCount})"
+                if (totalLen + line.length + 1 > maxFieldLen) break
+                lines.add(line)
+                totalLen += line.length + 1
+            }
+            if (lines.isNotEmpty()) {
+                val value = lines.joinToString("\n")
+                eb.addField("Prospects", value, false)
+            }
+        }
+
         d.imageUrl?.takeIf { it.isNotBlank() }?.let { eb.setThumbnail(it) }
         return eb.build()
     }

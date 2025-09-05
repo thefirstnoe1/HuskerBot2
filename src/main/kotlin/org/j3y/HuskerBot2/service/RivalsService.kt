@@ -7,7 +7,9 @@ import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class RivalsService {
-    private val url = "https://www.on3.com/_next/data/{buildId}/rivals/search.json?searchText={name}&minClassYear={year}&maxClassYear={year}&sportKey=1"
+    private val searchUrl = "https://www.on3.com/_next/data/{buildId}/rivals/search.json?searchText={name}&minClassYear={year}&maxClassYear={year}&sportKey=1"
+    private val playerUrl = "https://www.on3.com/_next/data/{buildId}/rivals/{playerSlug}/recruiting/{recruitKey}/interests.json"
+
     private val client = RestTemplate()
 
     data class RecruitData(
@@ -27,7 +29,16 @@ class RivalsService {
         val positionRank: Int,
         val stateRank: Int,
         val imageUrl: String? = null,
-        val link: String
+        val link: String,
+        val prospects: List<RecruitProspects> = listOf(),
+    )
+
+    data class RecruitProspects(
+        val teamName: String,
+        val status: String,
+        val prediction: Double,
+        val officialVisitCount: Int,
+        val unofficialVisitCount: Int,
     )
 
     /**
@@ -48,13 +59,16 @@ class RivalsService {
 
     fun getRecruitData(year: Int, name: String): RecruitData? {
         val buildId = fetchBuildId() ?: return null
-        val uri = UriComponentsBuilder.fromUriString(url).buildAndExpand(buildId, name, year, year).toUri()
+        val uri = UriComponentsBuilder.fromUriString(searchUrl).buildAndExpand(buildId, name, year, year).toUri()
         val response = client.getForObject(uri, JsonNode::class.java)
 
         val recruit = response?.at("/pageProps/searchData/list/0") ?: return null
         val rating = recruit.path("rating")
+        val slug = recruit.path("slug").asText()
+        val recruitKey = recruit.path("recruitmentKey").asText()
 
-        val link = "https://www.on3.com/rivals/${recruit.path("slug").asText()}/"
+        val link = "https://www.on3.com/rivals/$slug/"
+        val prospects = getPlayerProspects(slug, recruitKey, buildId)
 
         return RecruitData(
             year = recruit.path("classYear").asInt(),
@@ -73,7 +87,25 @@ class RivalsService {
             positionRank = rating.path("consensusPositionRank").asInt(),
             stateRank = rating.path("consensusStateRank").asInt(),
             imageUrl = recruit.path("defaultAssetUrl").asText(null),
-            link = link
+            link = link,
+            prospects = prospects,
         )
+    }
+
+    fun getPlayerProspects(playerSlug: String, recruitKey: String, buildId: String? = null): List<RecruitProspects> {
+        val thisBuildId = buildId ?: fetchBuildId() ?: return emptyList()
+        val uri = UriComponentsBuilder.fromUriString(playerUrl).buildAndExpand(buildId, playerSlug, recruitKey).toUri()
+        val response = client.getForObject(uri, JsonNode::class.java)
+
+        val prospects = response?.at("/pageProps/teamTargets/list") ?: return emptyList()
+        return prospects.map {
+            RecruitProspects(
+                teamName = it.at("/team/fullName").asText("N/A"),
+                status = it.path("status").asText("N/A"),
+                prediction = it.path("prediction").asDouble(),
+                officialVisitCount = it.path("officialVisitCount").asInt(),
+                unofficialVisitCount = it.path("unOfficialVisitCount").asInt(),
+            )
+        }
     }
 }
