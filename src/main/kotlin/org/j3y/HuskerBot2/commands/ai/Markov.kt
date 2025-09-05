@@ -1,4 +1,4 @@
-package org.j3y.HuskerBot2.commands.other
+package org.j3y.HuskerBot2.commands.ai
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent

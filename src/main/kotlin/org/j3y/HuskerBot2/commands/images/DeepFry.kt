@@ -1,27 +1,44 @@
-package org.j3y.HuskerBot2.commands.other
+package org.j3y.HuskerBot2.commands.images
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.utils.FileUpload
+import org.bytedeco.opencv.global.opencv_core
+import org.bytedeco.opencv.global.opencv_imgproc
+import org.bytedeco.opencv.opencv_core.Mat
+import org.bytedeco.opencv.opencv_core.RectVector
+import org.bytedeco.opencv.opencv_core.Size
+import org.bytedeco.opencv.opencv_objdetect.CascadeClassifier
 import org.j3y.HuskerBot2.commands.SlashCommand
+import org.slf4j.LoggerFactory
+import org.springframework.core.io.Resource
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
-import org.springframework.core.io.Resource
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver
-import java.awt.*
-import java.awt.geom.AffineTransform
+import java.awt.AlphaComposite
+import java.awt.Color
+import java.awt.Graphics2D
+import java.awt.Rectangle
+import java.awt.RenderingHints
 import java.awt.color.ColorSpace
-import java.awt.image.*
+import java.awt.geom.AffineTransform
+import java.awt.image.BufferedImage
+import java.awt.image.ColorConvertOp
+import java.awt.image.ConvolveOp
+import java.awt.image.DataBufferByte
+import java.awt.image.Kernel
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URI
-import java.util.*
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.ArrayList
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
@@ -30,17 +47,6 @@ import javax.imageio.stream.MemoryCacheImageOutputStream
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
-import org.slf4j.LoggerFactory
-
-// OpenCV (Bytedeco)
-import org.bytedeco.opencv.opencv_objdetect.CascadeClassifier
-import org.bytedeco.opencv.opencv_core.Mat
-import org.bytedeco.opencv.opencv_core.RectVector
-import org.bytedeco.opencv.opencv_core.Size
-import org.bytedeco.opencv.global.opencv_core.CV_8UC1
-import org.bytedeco.opencv.global.opencv_imgproc.equalizeHist
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 @Component
 class DeepFry() : SlashCommand() {
@@ -106,7 +112,7 @@ class DeepFry() : SlashCommand() {
             val withOverlays = addRandomOverlays(withEyes)
             val fried = deepFryRandom(withOverlays)
 
-            val jpegBytes = toLowQualityJpegBytes(fried, quality = Random.nextDouble(0.05, 0.25).toFloat())
+            val jpegBytes = toLowQualityJpegBytes(fried, quality = Random.Default.nextDouble(0.05, 0.25).toFloat())
             val filename = "deepfried_${System.currentTimeMillis()}.jpg"
 
             commandEvent.hook.sendFiles(FileUpload.fromData(jpegBytes, filename)).queue()
@@ -262,7 +268,7 @@ class DeepFry() : SlashCommand() {
         }
 
         val data = (grayBI.raster.dataBuffer as DataBufferByte).data
-        val mat = Mat(h, w, CV_8UC1)
+        val mat = Mat(h, w, opencv_core.CV_8UC1)
         // Fill Mat with grayscale bytes (BytePointer indexed copy)
         val ptr = mat.data()
         for (i in 0 until data.size) {
@@ -270,7 +276,7 @@ class DeepFry() : SlashCommand() {
         }
 
         // Improve detection a bit
-        equalizeHist(mat, mat)
+        opencv_imgproc.equalizeHist(mat, mat)
 
         val eyes = RectVector()
         try {

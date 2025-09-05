@@ -1,6 +1,7 @@
-package org.j3y.HuskerBot2.commands.other
+package org.j3y.HuskerBot2.commands.ai
 
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -41,7 +42,7 @@ class Gemini(
 
             // Split the response into 1024-character chunks and send as multiple embeds (one embed per chunk)
             val chunks = chunkString(message, 1024)
-            val embeds = mutableListOf<net.dv8tion.jda.api.entities.MessageEmbed>()
+            val embeds = mutableListOf<MessageEmbed>()
 
             // Discord allows up to 10 embeds per message; cap to 3 and indicate truncation if necessary because too much is too much
             val maxEmbeds = 3
