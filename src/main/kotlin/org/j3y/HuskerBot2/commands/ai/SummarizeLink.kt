@@ -7,6 +7,11 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.GoogleGeminiService
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.client.SimpleClientHttpRequestFactory
+import org.springframework.web.client.RestTemplate
 import org.springframework.stereotype.Component
 import com.microsoft.playwright.Playwright
 import com.microsoft.playwright.Browser
@@ -14,6 +19,7 @@ import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.LoadState
 import java.awt.Color
 import java.net.URI
+import java.net.URL
 import java.time.OffsetDateTime
 import org.jsoup.Jsoup
 
@@ -49,10 +55,13 @@ class SummarizeLink(
                 commandEvent.hook.sendMessage("That doesn't look like a valid URL.").queue(); return
             }
 
+            // Rewrite reddit links to old.reddit.com and use RestTemplate for those
+            val (finalUri, useRestTemplate) = rewriteIfReddit(uri)
+
             val html = try {
-                fetchWithHeadlessBrowser(uri.toString())
+                if (useRestTemplate) fetchWithRestTemplate(finalUri.toString()) else fetchWithHeadlessBrowser(finalUri.toString())
             } catch (e: Exception) {
-                log.warn("Failed to fetch URL: {}", link, e)
+                log.warn("Failed to fetch URL: {}", finalUri, e)
                 null
             }
 
@@ -88,6 +97,50 @@ class SummarizeLink(
         } catch (e: Exception) {
             log.error("Error executing /summarize-link", e)
             commandEvent.hook.sendMessage("Error while summarizing link: ${e.message}").setEphemeral(true).queue()
+        }
+    }
+
+    private fun rewriteIfReddit(input: URI): Pair<URI, Boolean> {
+        return try {
+            val host = input.host?.lowercase() ?: return Pair(input, false)
+            return if (host == "reddit.com" || host == "www.reddit.com") {
+                val newUri = URI(
+                    input.scheme,
+                    input.userInfo,
+                    "old.reddit.com",
+                    input.port,
+                    input.path,
+                    input.query,
+                    input.fragment
+                )
+                Pair(newUri, true)
+            } else {
+                Pair(input, false)
+            }
+        } catch (e: Exception) {
+            Pair(input, false)
+        }
+    }
+
+    private fun fetchWithRestTemplate(url: String): String? {
+        return try {
+            val factory = SimpleClientHttpRequestFactory().apply {
+                setConnectTimeout(10_000)
+                setReadTimeout(20_000)
+            }
+            val restTemplate = RestTemplate(factory)
+            val headers = HttpHeaders().apply {
+                add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+                add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                add("Accept-Language", "en-US,en;q=0.9")
+            }
+            val entity = HttpEntity<Void>(headers)
+            val response = restTemplate.exchange(url, HttpMethod.GET, entity, String::class.java)
+            val body = response.body
+            if (body.isNullOrBlank()) null else body
+        } catch (e: Exception) {
+            log.warn("RestTemplate failed to fetch {}", url, e)
+            null
         }
     }
 
