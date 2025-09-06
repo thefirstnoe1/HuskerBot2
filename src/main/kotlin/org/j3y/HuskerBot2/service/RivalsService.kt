@@ -94,7 +94,7 @@ class RivalsService {
 
     fun getPlayerProspects(playerSlug: String, recruitKey: String, buildId: String? = null): List<RecruitProspects> {
         val thisBuildId = buildId ?: fetchBuildId() ?: return emptyList()
-        val uri = UriComponentsBuilder.fromUriString(playerUrl).buildAndExpand(buildId, playerSlug, recruitKey).toUri()
+        val uri = UriComponentsBuilder.fromUriString(playerUrl).buildAndExpand(thisBuildId, playerSlug, recruitKey).toUri()
         val response = client.getForObject(uri, JsonNode::class.java)
 
         val prospects = response?.at("/pageProps/teamTargets/list") ?: return emptyList()

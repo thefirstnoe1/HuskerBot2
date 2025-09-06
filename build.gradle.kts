@@ -22,6 +22,10 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	// Playwright for headless browser fetching
+	implementation("com.microsoft.playwright:playwright:1.47.0")
+	// Jsoup for HTML parsing/stripping
+	implementation("org.jsoup:jsoup:1.18.1")
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
