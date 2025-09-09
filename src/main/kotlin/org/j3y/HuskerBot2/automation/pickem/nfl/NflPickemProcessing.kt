@@ -327,7 +327,8 @@ class NflPickemProcessing {
         userSummaries.forEach { (userId, correctTotal, points) ->
             val (correct, total) = correctTotal
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            lines.add("$medal $rank. <@${userId}> — ${points} pts (${correct}/${total} correct)")
+            val member = try { channel.guild.retrieveMemberById(userId).complete().asMention } catch (e: Exception) { "<@${userId}>" }
+            lines.add("$medal $rank. $member — ${points} pts (${correct}/${total} correct)")
             rank++
         }
         if (lines.isEmpty()) {
@@ -382,7 +383,8 @@ class NflPickemProcessing {
         var rank = 1
         leaderboard.forEach { (userId, correctCount, points) ->
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            lines.add("$medal $rank. <@${userId}> — ${points} pts (${correctCount} correct)")
+            val member = try { channel.guild.retrieveMemberById(userId).complete().asMention } catch (e: Exception) { "<@${userId}>" }
+            lines.add("$medal $rank. ${member} — ${points} pts (${correctCount} correct)")
             rank++
         }
         // Discord embed field values must be <= 1000 characters. Chunk the leaderboard lines accordingly.
