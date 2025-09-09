@@ -35,11 +35,10 @@ class NflPickemProcessing {
     @Value("\${discord.channels.nfl-pickem}") lateinit var pickemChannelId: String
 
     // Every Tuesday at 2:00 AM Central (db-scheduler recurring task configured)
-    fun postWeeklyPickem() {
-        processPreviousWeek()
+    fun postWeeklyPickem(week: Int = SeasonResolver.currentNflWeek()) {
+        processPreviousWeek(week - 1)
         deleteAllPosts()
 
-        val week = SeasonResolver.currentNflWeek()
         log.info("Posting NFL Pick'em for week {}", week)
         val data = espnService.getNflScoreboard(week)
 
@@ -58,7 +57,7 @@ class NflPickemProcessing {
 
         // First, post results from previous week and current season leaderboard
         try {
-            postPreviousWeekResults(channel)
+            postPreviousWeekResults(week - 1, channel)
             postSeasonLeaderboard(channel)
         } catch (e: Exception) {
             log.error("Failed to post previous week results or leaderboard", e)
@@ -115,7 +114,7 @@ class NflPickemProcessing {
                     .setColor(Color(0x00, 0x66, 0xCC))
                     .build()
             ).addActionRow(
-                Button.primary("nflpickem|mypicks", "View My Picks")
+                Button.primary("nflpickem|mypicks|${week}", "View My Picks")
             ).queue()
         } catch (e: Exception) {
             log.error("Failed to post pick'em", e)
@@ -249,9 +248,7 @@ class NflPickemProcessing {
         return nflGameRepo.findById(eventId.toLong()).orElse(NflGameEntity(eventId.toLong()))
     }
 
-    private fun processPreviousWeek() {
-        val prevWeek = SeasonResolver.currentNflWeek() - 1
-
+    private fun processPreviousWeek(prevWeek: Int = SeasonResolver.currentNflWeek() - 1) {
         if (prevWeek <= 0) {
             log.warn("Not processing previous week - there were no games in week {}", prevWeek)
             return
@@ -299,8 +296,7 @@ class NflPickemProcessing {
         nflPick.processed = true
     }
 
-    private fun postPreviousWeekResults(channel: TextChannel) {
-        val prevWeek = SeasonResolver.currentNflWeek() - 1
+    private fun postPreviousWeekResults(prevWeek: Int, channel: TextChannel) {
         val season = SeasonResolver.currentNflSeason()
         if (prevWeek <= 0) {
             log.info("No previous week results to post (week {}))", prevWeek)

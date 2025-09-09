@@ -25,9 +25,11 @@ class NflPickemListener : ListenerAdapter() {
         val id = event.componentId
 
         if (!id.startsWith("nflpickem|")) return
-        if (id == "nflpickem|mypicks") return nflPickemShow.handleEvent(event, SeasonResolver.currentNflWeek())
         try {
             val parts = id.split("|")
+
+            if (parts[1] == "mypicks") return nflPickemShow.handleEvent(event, parts[2].toInt())
+
             if (parts.size < 3) return
             val eventId = parts[1]
             val teamId = parts[2]

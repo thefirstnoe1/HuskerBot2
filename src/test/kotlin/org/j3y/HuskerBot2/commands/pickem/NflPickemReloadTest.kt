@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.InteractionHook
+import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction
 import org.j3y.HuskerBot2.automation.pickem.nfl.NflPickemProcessing
@@ -41,6 +42,9 @@ class NflPickemReloadTest {
         `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+        val option1 = Mockito.mock(OptionMapping::class.java)
+        `when`(event.getOption("week")).thenReturn(option1)
+        `when`(option1.asInt).thenReturn(3)
 
         cmd.execute(event)
 
@@ -68,11 +72,14 @@ class NflPickemReloadTest {
         `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+        val option2 = Mockito.mock(OptionMapping::class.java)
+        `when`(event.getOption("week")).thenReturn(option2)
+        `when`(option2.asInt).thenReturn(3)
 
         cmd.execute(event)
 
         Mockito.verify(replyAction).queue()
-        Mockito.verify(processing).postWeeklyPickem()
+        Mockito.verify(processing).postWeeklyPickem(3)
 
         val captor = ArgumentCaptor.forClass(String::class.java)
         Mockito.verify(hook).sendMessage(captor.capture())
@@ -95,8 +102,11 @@ class NflPickemReloadTest {
         `when`(event.deferReply(true)).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
         `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+        val option3 = Mockito.mock(OptionMapping::class.java)
+        `when`(event.getOption("week")).thenReturn(option3)
+        `when`(option3.asInt).thenReturn(3)
 
-        `when`(processing.postWeeklyPickem()).thenThrow(RuntimeException("boom"))
+        `when`(processing.postWeeklyPickem(3)).thenThrow(RuntimeException("boom"))
 
         cmd.execute(event)
 
