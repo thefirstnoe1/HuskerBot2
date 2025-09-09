@@ -322,15 +322,35 @@ class NflPickemProcessing {
             .setTitle("NFL Pick'em — Week $prevWeek Results")
             .setDescription("Each correct pick is worth 10 points.")
 
-        val sb = StringBuilder()
+        val lines = mutableListOf<String>()
         var rank = 1
         userSummaries.forEach { (userId, correctTotal, points) ->
             val (correct, total) = correctTotal
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correct}/${total} correct)\n")
+            lines.add("$medal $rank. <@${userId}> — ${points} pts (${correct}/${total} correct)")
             rank++
         }
-        eb.addField("Leaderboard", sb.toString().ifBlank { "No results." }, false)
+        if (lines.isEmpty()) {
+            eb.addField("Leaderboard", "No results.", false)
+        } else {
+            var current = StringBuilder()
+            fun flushField() {
+                if (current.isNotEmpty()) {
+                    eb.addField("Leaderboard", current.toString(), false)
+                    current = StringBuilder()
+                }
+            }
+            for (line in lines) {
+                val toAdd = if (current.isEmpty()) line else "\n$line"
+                if (current.length + toAdd.length > 1000) {
+                    flushField()
+                    current.append(line)
+                } else {
+                    current.append(toAdd)
+                }
+            }
+            flushField()
+        }
 
         channel.sendMessageEmbeds(eb.build()).queue()
     }
@@ -358,14 +378,31 @@ class NflPickemProcessing {
             .setTitle("NFL Pick'em — Season Leaderboard ($season)")
             .setDescription("Points = 10 × correct picks so far this season.")
 
-        val sb = StringBuilder()
+        val lines = mutableListOf<String>()
         var rank = 1
         leaderboard.forEach { (userId, correctCount, points) ->
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correctCount} correct)\n")
+            lines.add("$medal $rank. <@${userId}> — ${points} pts (${correctCount} correct)")
             rank++
         }
-        eb.addField("Top Players", sb.toString(), false)
+        // Discord embed field values must be <= 1000 characters. Chunk the leaderboard lines accordingly.
+        var current = StringBuilder()
+        fun flushField() {
+            if (current.isNotEmpty()) {
+                eb.addField("Top Players", current.toString(), false)
+                current = StringBuilder()
+            }
+        }
+        for (line in lines) {
+            val toAdd = if (current.isEmpty()) line else "\n$line"
+            if (current.length + toAdd.length > 1000) {
+                flushField()
+                current.append(line)
+            } else {
+                current.append(toAdd)
+            }
+        }
+        flushField()
 
         channel.sendMessageEmbeds(eb.build()).queue()
     }
