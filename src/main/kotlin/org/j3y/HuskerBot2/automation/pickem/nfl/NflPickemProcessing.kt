@@ -35,11 +35,10 @@ class NflPickemProcessing {
     @Value("\${discord.channels.nfl-pickem}") lateinit var pickemChannelId: String
 
     // Every Tuesday at 2:00 AM Central (db-scheduler recurring task configured)
-    fun postWeeklyPickem() {
-        processPreviousWeek()
+    fun postWeeklyPickem(week: Int = SeasonResolver.currentNflWeek()) {
+        processPreviousWeek(week - 1)
         deleteAllPosts()
 
-        val week = SeasonResolver.currentNflWeek()
         log.info("Posting NFL Pick'em for week {}", week)
         val data = espnService.getNflScoreboard(week)
 
@@ -58,7 +57,7 @@ class NflPickemProcessing {
 
         // First, post results from previous week and current season leaderboard
         try {
-            postPreviousWeekResults(channel)
+            postPreviousWeekResults(week - 1, channel)
             postSeasonLeaderboard(channel)
         } catch (e: Exception) {
             log.error("Failed to post previous week results or leaderboard", e)
@@ -115,7 +114,7 @@ class NflPickemProcessing {
                     .setColor(Color(0x00, 0x66, 0xCC))
                     .build()
             ).addActionRow(
-                Button.primary("nflpickem|mypicks", "View My Picks")
+                Button.primary("nflpickem|mypicks|${week}", "View My Picks")
             ).queue()
         } catch (e: Exception) {
             log.error("Failed to post pick'em", e)
@@ -249,9 +248,7 @@ class NflPickemProcessing {
         return nflGameRepo.findById(eventId.toLong()).orElse(NflGameEntity(eventId.toLong()))
     }
 
-    private fun processPreviousWeek() {
-        val prevWeek = SeasonResolver.currentNflWeek() - 1
-
+    private fun processPreviousWeek(prevWeek: Int = SeasonResolver.currentNflWeek() - 1) {
         if (prevWeek <= 0) {
             log.warn("Not processing previous week - there were no games in week {}", prevWeek)
             return
@@ -299,8 +296,7 @@ class NflPickemProcessing {
         nflPick.processed = true
     }
 
-    private fun postPreviousWeekResults(channel: TextChannel) {
-        val prevWeek = SeasonResolver.currentNflWeek() - 1
+    private fun postPreviousWeekResults(prevWeek: Int, channel: TextChannel) {
         val season = SeasonResolver.currentNflSeason()
         if (prevWeek <= 0) {
             log.info("No previous week results to post (week {}))", prevWeek)
@@ -326,15 +322,39 @@ class NflPickemProcessing {
             .setTitle("NFL Pick'em — Week $prevWeek Results")
             .setDescription("Each correct pick is worth 10 points.")
 
-        val sb = StringBuilder()
+        val lines = mutableListOf<String>()
         var rank = 1
         userSummaries.forEach { (userId, correctTotal, points) ->
             val (correct, total) = correctTotal
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correct}/${total} correct)\n")
+            val member = try { channel.guild.retrieveMemberById(userId).complete().effectiveName } catch (e: Exception) {
+                log.error("Failed to retrieve member for user ID {}", userId)
+                "<@${userId}>"
+            }
+            lines.add("$medal $rank. $member — ${points} pts (${correct}/${total} correct)")
             rank++
         }
-        eb.addField("Leaderboard", sb.toString().ifBlank { "No results." }, false)
+        if (lines.isEmpty()) {
+            eb.addField("Leaderboard", "No results.", false)
+        } else {
+            var current = StringBuilder()
+            fun flushField() {
+                if (current.isNotEmpty()) {
+                    eb.addField("Leaderboard", current.toString(), false)
+                    current = StringBuilder()
+                }
+            }
+            for (line in lines) {
+                val toAdd = if (current.isEmpty()) line else "\n$line"
+                if (current.length + toAdd.length > 1000) {
+                    flushField()
+                    current.append(line)
+                } else {
+                    current.append(toAdd)
+                }
+            }
+            flushField()
+        }
 
         channel.sendMessageEmbeds(eb.build()).queue()
     }
@@ -362,14 +382,35 @@ class NflPickemProcessing {
             .setTitle("NFL Pick'em — Season Leaderboard ($season)")
             .setDescription("Points = 10 × correct picks so far this season.")
 
-        val sb = StringBuilder()
+        val lines = mutableListOf<String>()
         var rank = 1
         leaderboard.forEach { (userId, correctCount, points) ->
             val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            sb.append("$medal $rank. <@${userId}> — ${points} pts (${correctCount} correct)\n")
+            val member = try { channel.guild.retrieveMemberById(userId).complete().effectiveName } catch (e: Exception) {
+                log.error("Failed to retrieve member for user ID {}", userId)
+                "<@${userId}>"
+            }
+            lines.add("$medal $rank. ${member} — ${points} pts (${correctCount} correct)")
             rank++
         }
-        eb.addField("Top Players", sb.toString(), false)
+        // Discord embed field values must be <= 1000 characters. Chunk the leaderboard lines accordingly.
+        var current = StringBuilder()
+        fun flushField() {
+            if (current.isNotEmpty()) {
+                eb.addField("Top Players", current.toString(), false)
+                current = StringBuilder()
+            }
+        }
+        for (line in lines) {
+            val toAdd = if (current.isEmpty()) line else "\n$line"
+            if (current.length + toAdd.length > 1000) {
+                flushField()
+                current.append(line)
+            } else {
+                current.append(toAdd)
+            }
+        }
+        flushField()
 
         channel.sendMessageEmbeds(eb.build()).queue()
     }

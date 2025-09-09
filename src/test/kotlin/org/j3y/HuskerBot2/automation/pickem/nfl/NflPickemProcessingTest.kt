@@ -200,8 +200,8 @@ class NflPickemProcessingTest {
         // Also capture any setActionRow, buttons list
         val buttonsCaptor = ArgumentCaptor.forClass(List::class.java as Class<List<Button>>)
         `when`(ch.msgAction.setActionRow(buttonsCaptor.capture())).thenReturn(ch.msgAction)
-
-        processing.postWeeklyPickem()
+        
+        processing.postWeeklyPickem(2)
 
         // Verify game saved with ids/names set from JSON
         val gameSavedCaptor = ArgumentCaptor.forClass(NflGameEntity::class.java)
@@ -260,8 +260,8 @@ class NflPickemProcessingTest {
 
         val msgCaptor = ArgumentCaptor.forClass(String::class.java)
         `when`(ch.channel.sendMessage(msgCaptor.capture())).thenReturn(ch.msgAction)
-
-        processing.postWeeklyPickem()
+        
+        processing.postWeeklyPickem(2)
 
         // Among messages, we should have the season no-picks notice
         val allMsgs = msgCaptor.allValues.joinToString("\n")
@@ -296,7 +296,7 @@ class NflPickemProcessingTest {
         `when`(msgAction.queue()).then { null }
         `when`(channel.sendMessageEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(msgAction)
 
-        assertDoesNotThrow { processing.postWeeklyPickem() }
+        assertDoesNotThrow { processing.postWeeklyPickem(2) }
 
         Mockito.verify(channel).upsertPermissionOverride(role)
         val permsCaptor = ArgumentCaptor.forClass(Collection::class.java as Class<Collection<Permission>>)
@@ -335,8 +335,8 @@ class NflPickemProcessingTest {
         val root = mapper.createObjectNode()
         root.set<ArrayNode>("events", mapper.createArrayNode())
         `when`(espn.getNflScoreboard(Mockito.anyInt())).thenReturn(root)
-
-        processing.postWeeklyPickem()
+        
+        processing.postWeeklyPickem(2)
 
         val embed = embedCaptor.allValues.firstOrNull { it.title?.contains("Season Leaderboard") == true }
         assertNotNull(embed)
