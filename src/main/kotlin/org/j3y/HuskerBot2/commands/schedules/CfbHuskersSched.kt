@@ -33,7 +33,7 @@ class CfbHuskersSched : SlashCommand() {
             return
         }
 
-        val formatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a z").withZone(ZoneId.systemDefault())
+        val formatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a z").withZone(ZoneId.of("America/Chicago"))
 
         val eb = EmbedBuilder()
             .setTitle("🏈 Nebraska Football Schedule — $season")

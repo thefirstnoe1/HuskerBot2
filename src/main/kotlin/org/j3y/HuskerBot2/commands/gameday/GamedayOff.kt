@@ -13,6 +13,8 @@ import java.awt.Color
 
 @Component
 class GamedayOff : GamedayBase() {
+    @Value("\${discord.channels.general}")lateinit var generalChannelId: String
+
     override fun getCommandKey(): String = "off"
     override fun isSubcommand(): Boolean = true
     override fun getDescription(): String = "Turns gameday mode off"
@@ -24,6 +26,10 @@ class GamedayOff : GamedayBase() {
             commandEvent.reply("Error while trying to disable gameday mode: ${e.message}").setEphemeral(true).queue()
             return
         }
-        commandEvent.replyEmbeds(EmbedBuilder().setTitle("Gameday Mode Disabled!").setColor(Color.RED).setDescription("Hopefully it was a W. Keep it civil.").build()).queue()
+
+        val channel = commandEvent.guild?.getTextChannelById(generalChannelId) ?: return
+
+        channel.sendMessageEmbeds(EmbedBuilder().setTitle("Gameday Mode Disabled!").setColor(Color.RED).setDescription("Hopefully it was a W. Keep it civil.").build()).queue()
+        commandEvent.reply("Gameday mode disabled.").setEphemeral(true).queue()
     }
 }
