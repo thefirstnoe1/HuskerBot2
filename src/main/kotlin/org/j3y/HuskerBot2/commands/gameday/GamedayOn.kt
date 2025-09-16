@@ -12,7 +12,9 @@ import org.springframework.stereotype.Component
 import java.awt.Color
 
 @Component
-class GamedayOn : GamedayBase() {
+class GamedayOn() : GamedayBase() {
+    @Value("\${discord.channels.general}")lateinit var generalChannelId: String
+
     override fun getCommandKey(): String = "on"
     override fun isSubcommand(): Boolean = true
     override fun getDescription(): String = "Turns gameday mode on"
@@ -24,6 +26,10 @@ class GamedayOn : GamedayBase() {
             commandEvent.reply("Error while trying to enable gameday mode: ${e.message}").setEphemeral(true).queue()
             return
         }
-        commandEvent.replyEmbeds(EmbedBuilder().setTitle("Gameday Mode Enabled!").setColor(Color.RED).setDescription("Make your way to the gameday channels.").build()).queue()
+
+        val channel = commandEvent.guild?.getTextChannelById(generalChannelId) ?: return
+
+        channel.sendMessageEmbeds(EmbedBuilder().setTitle("Gameday Mode Enabled!").setColor(Color.RED).setDescription("Make your way to the gameday channels.").build()).queue()
+        commandEvent.reply("Gameday mode enabled.").setEphemeral(true).queue()
     }
 }
