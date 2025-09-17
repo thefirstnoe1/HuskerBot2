@@ -13,6 +13,7 @@ import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
 import org.j3y.HuskerBot2.service.EspnService
+import org.j3y.HuskerBot2.service.NflPickemLeaderboardService
 import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,6 +33,7 @@ class NflPickemProcessing {
     @Autowired @Lazy lateinit var jda: JDA
     @Autowired lateinit var espnService: EspnService
     @Autowired lateinit var nflGameRepo: NflGameRepo
+    @Autowired lateinit var leaderboardService: NflPickemLeaderboardService
     @Value("\${discord.channels.nfl-pickem}") lateinit var pickemChannelId: String
 
     // Every Tuesday at 2:00 AM Central (db-scheduler recurring task configured)
@@ -309,110 +311,32 @@ class NflPickemProcessing {
             return
         }
 
-        val byUser = picks.groupBy { it.userId }
-        val userSummaries = byUser.map { (userId, userPicks) ->
-            val correct = userPicks.count { it.correctPick }
-            val total = userPicks.size
-            val points = correct * 10
-            Triple(userId, correct to total, points)
-        }.sortedWith(compareByDescending<Triple<Long, Pair<Int, Int>, Int>> { it.third }.thenBy { it.first })
-
-        val eb = EmbedBuilder()
-            .setColor(Color(0x1F, 0x8B, 0x4C))
-            .setTitle("NFL Pick'em — Week $prevWeek Results")
-            .setDescription("Each correct pick is worth 10 points.")
-
-        val lines = mutableListOf<String>()
-        var rank = 1
-        userSummaries.forEach { (userId, correctTotal, points) ->
-            val (correct, total) = correctTotal
-            val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            val member = try { channel.guild.retrieveMemberById(userId).complete().effectiveName } catch (e: Exception) {
-                log.error("Failed to retrieve member for user ID {}", userId)
-                "<@${userId}>"
-            }
-            lines.add("$medal $rank. $member — ${points} pts (${correct}/${total} correct)")
-            rank++
-        }
-        if (lines.isEmpty()) {
-            eb.addField("Leaderboard", "No results.", false)
-        } else {
-            var current = StringBuilder()
-            fun flushField() {
-                if (current.isNotEmpty()) {
-                    eb.addField("Leaderboard", current.toString(), false)
-                    current = StringBuilder()
-                }
-            }
-            for (line in lines) {
-                val toAdd = if (current.isEmpty()) line else "\n$line"
-                if (current.length + toAdd.length > 1000) {
-                    flushField()
-                    current.append(line)
-                } else {
-                    current.append(toAdd)
-                }
-            }
-            flushField()
-        }
-
-        channel.sendMessageEmbeds(eb.build()).queue()
+        val embed = leaderboardService.buildLeaderboardEmbed(
+            picks,
+            title = "NFL Pick'em — Week $prevWeek Results",
+            guild = channel.guild,
+            color = Color(0x1F, 0x8B, 0x4C)
+        )
+        channel.sendMessageEmbeds(embed).queue()
     }
 
     private fun postSeasonLeaderboard(channel: TextChannel) {
         val season = SeasonResolver.currentNflSeason()
-        val allPicks = try { nflPickRepo.findAll() } catch (e: Exception) { emptyList() }
-        val correctByUser = allPicks
-            .asSequence()
-            .filter { it.season == season && it.correctPick }
-            .groupBy { it.userId }
-            .mapValues { (_, picks) -> picks.size }
+        val seasonPicks = try { nflPickRepo.findAll() } catch (e: Exception) { emptyList() }
+            .filter { it.season == season }
 
-        if (correctByUser.isEmpty()) {
+        if (seasonPicks.isEmpty()) {
             channel.sendMessage("No season picks recorded yet for $season.").queue()
             return
         }
 
-        val leaderboard = correctByUser
-            .map { (userId, correctCount) -> Triple(userId, correctCount, correctCount * 10) }
-            .sortedWith(compareByDescending<Triple<Long, Int, Int>> { it.third }.thenBy { it.first })
-
-        val eb = EmbedBuilder()
-            .setColor(Color(0x00, 0x66, 0xCC))
-            .setTitle("NFL Pick'em — Season Leaderboard ($season)")
-            .setDescription("Points = 10 × correct picks so far this season.")
-
-        val lines = mutableListOf<String>()
-        var rank = 1
-        leaderboard.forEach { (userId, correctCount, points) ->
-            val medal = when (rank) { 1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "" }
-            val member = try { channel.guild.retrieveMemberById(userId).complete().effectiveName } catch (e: Exception) {
-                log.error("Failed to retrieve member for user ID {}", userId)
-                "<@${userId}>"
-            }
-            lines.add("$medal $rank. ${member} — ${points} pts (${correctCount} correct)")
-            rank++
-        }
-        // Discord embed field values must be <= 1000 characters. Chunk the leaderboard lines accordingly.
-        var current = StringBuilder()
-        fun flushField() {
-            if (current.isNotEmpty()) {
-                eb.addField("Top Players", current.toString(), false)
-                current = StringBuilder()
-            }
-        }
-        for (line in lines) {
-            val toAdd = if (current.isEmpty()) line else "\n$line"
-            if (current.length + toAdd.length > 1000) {
-                flushField()
-                current.append(line)
-            } else {
-                current.append(toAdd)
-            }
-        }
-        flushField()
-
-        channel.sendMessageEmbeds(eb.build()).queue()
+        val embed = leaderboardService.buildLeaderboardEmbed(
+            seasonPicks.filter { it.correctPick || !it.correctPick }, // include all to show total attempts
+            title = "NFL Pick'em — Season Leaderboard ($season)",
+            guild = channel.guild,
+            color = Color(0x00, 0x66, 0xCC)
+        )
+        channel.sendMessageEmbeds(embed).queue()
     }
 
     private fun ensurePickemChannelReadOnly(channel: TextChannel) {

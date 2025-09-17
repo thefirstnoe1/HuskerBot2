@@ -54,15 +54,16 @@ class NflPickemShow : SlashCommand() {
 
             val picks = try { nflPickRepo.findByUserIdAndSeasonAndWeek(targetUser.idLong, season, week) } catch (e: Exception) { emptyList() }
 
-            if (picks.isEmpty()) {
-                commandEvent.hook.sendMessage("No picks found for ${targetUser.asMention} in week $week.").queue()
-                return
-            }
+            // Fetch all games for this season and week (using existing repo method + filter to keep changes minimal)
+            val allGames: List<NflGameEntity> = try {
+                nflGameRepo.findBySeasonAndWeekOrderByDateTimeAsc(season, week)
+            } catch (e: Exception) { emptyList() }
 
-            // Load related games (avoid N+1 by bulk fetching via ids if desired; here minimal changes per instruction)
-            val gamesById: Map<Long, NflGameEntity?> = picks.associate { it.gameId to nflGameRepo.findById(it.gameId).orElse(null) }
+            // Map picks by gameId for quick lookup
+            val picksByGameId = picks.associateBy { it.gameId }
 
-            val allProcessed = picks.all { it.processed }
+            // Determine whether results are final: all games have winners
+            val allProcessed = allGames.isNotEmpty() && allGames.all { it.winnerId != null }
             val eb = EmbedBuilder()
                 .setColor(Color(0x00, 0x66, 0xCC))
                 .setTitle("NFL Pick'em — Week $week Picks")
@@ -70,15 +71,21 @@ class NflPickemShow : SlashCommand() {
 
             var correctCount = 0
             val sb = StringBuilder()
-            picks.sortedBy { gamesById[it.gameId]?.dateTime }.forEach { pick ->
-                val game = gamesById[pick.gameId]
-                if (game == null) {
-                    sb.append("Game ${pick.gameId}: Picked team ${pick.winningTeamId}" )
-                } else {
-                    val awayTeam = (if (game.awayTeamId == pick.winningTeamId) "☑\uFE0F" else "❌") + " ${game.awayTeam}"
-                    val homeTeam = "${game.homeTeam} " + (if (game.homeTeamId == pick.winningTeamId) "☑\uFE0F" else "❌")
+
+            // If no games were found, keep previous behavior but inform gracefully
+            if (allGames.isEmpty()) {
+                sb.append("No games found for week $week.")
+            } else {
+                allGames.forEach { game ->
+                    val pick = picksByGameId[game.id]
+                    val awayMark = if (pick != null && game.awayTeamId == pick.winningTeamId) "☑\uFE0F" else if (pick != null) "❌" else " "
+                    val homeMark = if (pick != null && game.homeTeamId == pick.winningTeamId) "☑\uFE0F" else if (pick != null) "❌" else " "
+                    val awayTeam = (if (awayMark.isNotBlank()) "$awayMark " else "") + game.awayTeam
+                    val homeTeam = game.homeTeam + (if (homeMark.isNotBlank()) " $homeMark" else "")
                     val matchup = "$awayTeam @ $homeTeam"
-                    if (allProcessed) {
+                    if (pick == null) {
+                        sb.append("$matchup — No pick\n")
+                    } else if (allProcessed) {
                         val correct = pick.correctPick
                         if (correct) correctCount++
                         val mark = if (correct) "✅" else "❌"
@@ -92,7 +99,8 @@ class NflPickemShow : SlashCommand() {
             eb.addField("Picks", sb.toString().ifBlank { "No picks." }, false)
             if (allProcessed) {
                 val points = correctCount * 10
-                eb.setFooter("Week $week score: $points pts (${correctCount}/${picks.size} correct)")
+                val totalPicked = picks.count()
+                eb.setFooter("Week $week score: $points pts (${correctCount}/$totalPicked correct)")
             }
 
             commandEvent.hook.sendMessageEmbeds(eb.build()).queue()
