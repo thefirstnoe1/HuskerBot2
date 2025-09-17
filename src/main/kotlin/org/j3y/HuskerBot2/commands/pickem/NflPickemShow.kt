@@ -63,7 +63,7 @@ class NflPickemShow : SlashCommand() {
             val picksByGameId = picks.associateBy { it.gameId }
 
             // Determine whether results are final: all games have winners
-            val allProcessed = allGames.isNotEmpty() && allGames.all { it.winnerId != null }
+            val allProcessed = allGames.isNotEmpty() && allGames.all { it.winnerId != null && it.winnerId != 0L }
             val eb = EmbedBuilder()
                 .setColor(Color(0x00, 0x66, 0xCC))
                 .setTitle("NFL Pick'em — Week $week Picks")
