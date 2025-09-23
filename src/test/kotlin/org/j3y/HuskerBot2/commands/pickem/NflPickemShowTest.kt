@@ -86,14 +86,20 @@ class NflPickemShowTest {
         val messageAction = Mockito.mock(WebhookMessageCreateAction::class.java) as WebhookMessageCreateAction<Message>
         val week = 3
         `when`(pickRepo.findByUserIdAndSeasonAndWeek(99L, LocalDate.now().year, week)).thenReturn(emptyList())
-        `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+        // The implementation now always responds with an embed
+        `when`(hook.sendMessageEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(messageAction)
 
         cmd.handleEvent(event, week)
 
         Mockito.verify(replyAction).queue()
-        val captor = ArgumentCaptor.forClass(String::class.java)
-        Mockito.verify(hook).sendMessage(captor.capture())
-        assertEquals("No picks found for <@99> in week $week.", captor.value)
+        val embedCaptor = ArgumentCaptor.forClass(MessageEmbed::class.java)
+        Mockito.verify(hook).sendMessageEmbeds(embedCaptor.capture())
+        val embed = embedCaptor.value
+        assertEquals("NFL Pick'em — Week $week Picks", embed.title)
+        assertTrue(embed.description?.contains("User: <@99>") == true)
+        val picksField = embed.fields.firstOrNull { it.name == "Picks" }
+        assertNotNull(picksField)
+        assertTrue(picksField?.value?.contains("No games found for week $week.") == true)
         Mockito.verify(messageAction).queue()
     }
 
@@ -111,8 +117,9 @@ class NflPickemShowTest {
 
         val g1 = game(1L, home = "HomeA", homeId = 101L, away = "AwayA", awayId = 100L)
         val g2 = game(2L, home = "HomeB", homeId = 200L, away = "AwayB", awayId = 201L)
-        `when`(gameRepo.findById(1L)).thenReturn(Optional.of(g1))
-        `when`(gameRepo.findById(2L)).thenReturn(Optional.of(g2))
+        // Mark at least one game as pending (no winner) so results are not final
+        g1.winnerId = null
+        `when`(gameRepo.findBySeasonAndWeekOrderByDateTimeAsc(LocalDate.now().year, week)).thenReturn(listOf(g1, g2))
 
         cmd.handleEvent(event, week)
 
@@ -152,8 +159,10 @@ class NflPickemShowTest {
 
         val g1 = game(10L, home = "H1", homeId = 301L, away = "A1", awayId = 300L)
         val g2 = game(20L, home = "H2", homeId = 400L, away = "A2", awayId = 401L)
-        `when`(gameRepo.findById(10L)).thenReturn(Optional.of(g1))
-        `when`(gameRepo.findById(20L)).thenReturn(Optional.of(g2))
+        // Keep winnerId non-null for both to indicate final results
+        g1.winnerId = 301L
+        g2.winnerId = 400L
+        `when`(gameRepo.findBySeasonAndWeekOrderByDateTimeAsc(LocalDate.now().year, week)).thenReturn(listOf(g1, g2))
 
         cmd.handleEvent(event, week)
 

@@ -204,7 +204,7 @@ class SummarizeLink(
     private fun buildPrompt(content: String, link: String): String {
         return """
             Summarize the following web page content from $link.
-            - Provide 5-15 concise bullet points capturing the main ideas, facts, and any conclusions.
+            - Provide 5-8 concise bullet points capturing the main ideas, facts, and any conclusions.
             - If the content is news, include who/what/when/where and implications.
             - Keep the summary neutral and avoid speculation.
             Content:

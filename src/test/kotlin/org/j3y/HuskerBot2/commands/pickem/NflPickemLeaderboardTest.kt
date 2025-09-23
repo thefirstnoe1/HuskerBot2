@@ -1,6 +1,7 @@
 package org.j3y.HuskerBot2.commands.pickem
 
 import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.InteractionHook
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction
@@ -63,7 +64,7 @@ class NflPickemLeaderboardTest {
         @Suppress("UNCHECKED_CAST")
         val messageAction = Mockito.mock(WebhookMessageCreateAction::class.java) as WebhookMessageCreateAction<Message>
 
-        // Picks: user 1 -> 5 correct, user 2 -> 3 correct, user 3 -> 5 correct (tie with user 1)
+        // Picks: user 1 -> 5 correct (7 total), user 2 -> 3 correct (4 total), user 3 -> 5 correct (5 total)
         fun p(user: Long, correct: Boolean) = NflPick(
             gameId = System.nanoTime(), // unique enough for tests
             userId = user,
@@ -85,27 +86,30 @@ class NflPickemLeaderboardTest {
         // Defer + hook
         `when`(event.deferReply()).thenReturn(replyAction)
         `when`(event.hook).thenReturn(hook)
-        `when`(hook.sendMessage(Mockito.anyString())).thenReturn(messageAction)
+        // The command now sends an embed
+        `when`(hook.sendMessageEmbeds(Mockito.any(MessageEmbed::class.java))).thenReturn(messageAction)
 
         cmd.execute(event)
 
         Mockito.verify(replyAction).queue()
-        val captor = ArgumentCaptor.forClass(String::class.java)
-        Mockito.verify(hook).sendMessage(captor.capture())
+        val embedCaptor = ArgumentCaptor.forClass(MessageEmbed::class.java)
+        Mockito.verify(hook).sendMessageEmbeds(embedCaptor.capture())
         Mockito.verify(messageAction).queue()
 
-        val msg = captor.value
-        // Header
-        assertTrue(msg.startsWith("NFL Pick'em Leaderboard — $season\n"))
+        val embed = embedCaptor.value
+        assertEquals("NFL Pick'em — Season Leaderboard ($season)", embed.title)
+        assertEquals("Each correct pick is worth 10 points.", embed.description)
+        assertTrue(embed.fields.isNotEmpty())
+        val field = embed.fields[0]
+        assertEquals("Leaderboard", field.name)
 
-        val lines = msg.lines().filter { it.isNotBlank() }
-        // Expect 1 header + 3 entries = 4 lines
-        assertEquals(4, lines.size)
-
-        // Check ordering and formatting
-        assertEquals("1. <@1> — 50 pts (5 correct)", lines[1])
-        assertEquals("2. <@3> — 50 pts (5 correct)", lines[2])
-        assertEquals("3. <@2> — 30 pts (3 correct)", lines[3])
+        val fieldValue = field.value ?: ""
+        val lines = fieldValue.split("\n").filter { it.isNotBlank() }
+        assertEquals(3, lines.size)
+        // Check ordering and formatting with medals and totals
+        assertEquals("🥇 <@1> — 50 pts (5/7 correct)", lines[0])
+        assertEquals("🥇 <@3> — 50 pts (5/5 correct)", lines[1])
+        assertEquals("🥉 <@2> — 30 pts (3/4 correct)", lines[2])
     }
 
     @Test

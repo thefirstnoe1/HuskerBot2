@@ -10,4 +10,6 @@ interface NflGameRepo : JpaRepository<NflGameEntity, Long> {
     fun findAllBySeasonOrderByDateTimeAsc(season: Int): List<NflGameEntity>
 
     fun findBySeasonAndWeek(season: Int, week: Int): NflGameEntity?
+
+    fun findBySeasonAndWeekOrderByDateTimeAsc(season: Int, week: Int): List<NflGameEntity>
 }

@@ -99,7 +99,10 @@ class BetProcessing {
         }
         betRepo.saveAll(bets)
 
-        postWeeklyBets(week + 1)
+        val nextGameWeek =
+            scheduleRepo.findFirstByDateTimeAfterOrderByDateTimeAsc(gameEntity.dateTime)?.week ?: (week + 1)
+
+        postWeeklyBets(nextGameWeek)
     }
 
     final fun postWeeklyBets(week: Int = SeasonResolver.currentCfbWeek()) {
@@ -118,7 +121,8 @@ class BetProcessing {
         }
 
         deleteAllPosts()
-        postWeekLeaderboard(week - 1)
+        val prevWeek = scheduleRepo.findFirstByDateTimeBeforeOrderByDateTimeDesc(gameEntity.dateTime)?.week ?: (week - 1)
+        postWeekLeaderboard(prevWeek)
         postSeasonLeaderboard()
 
         val lines = data.path("lines").path(0)

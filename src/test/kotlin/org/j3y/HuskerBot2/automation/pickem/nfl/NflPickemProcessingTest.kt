@@ -18,6 +18,7 @@ import org.j3y.HuskerBot2.model.NflPick
 import org.j3y.HuskerBot2.repository.NflGameRepo
 import org.j3y.HuskerBot2.repository.NflPickRepo
 import org.j3y.HuskerBot2.service.EspnService
+import org.j3y.HuskerBot2.service.NflPickemLeaderboardService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -57,6 +58,7 @@ class NflPickemProcessingTest {
         setField("espnService", espn)
         setField("jda", jda)
         setField("pickemChannelId", "chan")
+        setField("leaderboardService", NflPickemLeaderboardService())
     }
 
     private fun scoreboardWithOneEvent(
@@ -340,9 +342,9 @@ class NflPickemProcessingTest {
 
         val embed = embedCaptor.allValues.firstOrNull { it.title?.contains("Season Leaderboard") == true }
         assertNotNull(embed)
-        val body = embed!!.fields.firstOrNull { it.name == "Top Players" }?.value ?: ""
-        assertTrue(body.contains("🥇 1. <@2> — 20 pts (2 correct)"))
-        assertTrue(body.contains("🥈 2. <@1> — 10 pts (1 correct)"))
+        val body = embed!!.fields.firstOrNull { it.name == "Leaderboard" }?.value ?: ""
+        assertTrue(body.contains("🥇 <@2> — 20 pts (2/2 correct)"))
+        assertTrue(body.contains("🥈 <@1> — 10 pts (1/2 correct)"))
     }
 
 
