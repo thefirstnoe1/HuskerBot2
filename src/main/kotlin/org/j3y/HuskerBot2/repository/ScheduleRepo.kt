@@ -12,4 +12,6 @@ interface ScheduleRepo : JpaRepository<ScheduleEntity, Long> {
     fun findBySeasonAndWeek(season: Int, week: Int): ScheduleEntity?
 
     fun findFirstByDateTimeAfterOrderByDateTimeAsc(now: Instant): ScheduleEntity?
+
+    fun findFirstByDateTimeBeforeOrderByDateTimeDesc(now: Instant): ScheduleEntity?
 }
