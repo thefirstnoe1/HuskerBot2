@@ -82,6 +82,51 @@ class CfbMatchupService(
             null
         }
     }
+
+    @Cacheable("cfb-team-season", unless = "#result == null || #result.isEmpty()")
+    fun getTeamSeasonGames(team: String, year: Int): JsonNode? {
+        return try {
+            log.info("Fetching CFB season games for team=$team, year=$year")
+
+            val headers = HttpHeaders()
+            headers.set("User-Agent", userAgent)
+            headers.set("Authorization", "Bearer $apiKey")
+            val entity = HttpEntity<String>(headers)
+
+            val uri = UriComponentsBuilder
+                .fromUriString("$baseUrl/games/teams")
+                .queryParam("year", year)
+                .queryParam("team", team)
+                .build(false)
+                .toUri()
+
+            log.debug("Making request to: $uri")
+
+            val response = restTemplate.exchange(
+                uri,
+                HttpMethod.GET,
+                entity,
+                JsonNode::class.java
+            )
+
+            val body = response.body
+            if (body != null && body.isArray) {
+                // Remove opponents from data
+                //body.forEach { game ->
+                //    val teams = game.path("teams") as ArrayNode
+                //    teams.removeIf { !team.equals(it.path("team").textValue(), true) }
+                //}
+
+                body
+            } else {
+                log.warn("No season games found for team=$team, year=$year")
+                null
+            }
+        } catch (e: Exception) {
+            log.error("Error fetching CFB season games for team=$team, year=$year", e)
+            null
+        }
+    }
     
     private fun parseMatchupData(jsonNode: JsonNode): TeamMatchupData {
         val team1 = jsonNode.get("team1")?.asText() ?: "Unknown"
