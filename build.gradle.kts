@@ -33,6 +33,7 @@ dependencies {
 	implementation("com.github.ben-manes.caffeine:caffeine")
 	implementation("net.dv8tion:JDA:5.6.+")
 	implementation("org.apache.httpcomponents.client5:httpclient5:5.+")
+    implementation("org.apache.httpcomponents.core5:httpcore5:5.+")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.bytedeco:opencv-platform:4.9.0-1.5.10") // OpenCV for eye detection for deepfry
