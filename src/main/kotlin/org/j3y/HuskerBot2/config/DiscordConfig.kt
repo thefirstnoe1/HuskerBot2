@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import org.j3y.HuskerBot2.commands.CommandListener
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import org.j3y.HuskerBot2.commands.ContextCommand
 import org.j3y.HuskerBot2.commands.SlashCommand
 import org.j3y.HuskerBot2.service.DefaultEspnService
 import org.slf4j.LoggerFactory
@@ -33,6 +34,7 @@ class DiscordConfig {
     fun getDiscordClient(
         @Value("\${discord.token}") token: String,
         slashCommands: Array<SlashCommand>,
+        contextCommands: Array<ContextCommand>,
         listeners: Array<ListenerAdapter>,
     ): JDA {
         val jda = JDABuilder.createLight(token, EnumSet.of(
@@ -58,6 +60,12 @@ class DiscordConfig {
                             .setDefaultPermissions(it.getPermissions())
                             .addSubcommands(it.getSubcommandData())
                     }
+            )
+            commands.addCommands(
+                contextCommands.map {
+                    Commands.context(it.getCommandType(), it.getCommandMenuText())
+                        .setDefaultPermissions(it.getPermissions())
+                }
             ).queue()
         }
 
