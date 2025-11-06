@@ -33,7 +33,7 @@ class MemberActivityListener : ListenerAdapter() {
             val embed = EmbedBuilder()
                 .setColor(Color(0x57F287)) // Discord blurple green-ish for success
                 .setTitle("Member Joined")
-                .setDescription(":inbox_tray: ${user.asMention} joined the server. Welcome!")
+                .setDescription(":inbox_tray: ${user.effectiveName} joined the server. Welcome!")
                 .setThumbnail(avatarUrl)
                 .setTimestamp(Instant.now())
                 .setFooter("${event.guild.name} • ${event.guild.memberCount} members")
@@ -62,7 +62,7 @@ class MemberActivityListener : ListenerAdapter() {
             val embed = EmbedBuilder()
                 .setColor(Color(0xED4245)) // Discord red for leave
                 .setTitle("Member Left")
-                .setDescription(":outbox_tray: ${user.asMention} left the server.")
+                .setDescription(":outbox_tray: ${user.effectiveName} left the server.")
                 .setThumbnail(avatarUrl)
                 .setTimestamp(Instant.now())
                 .setFooter("${event.guild.name} • ${event.guild.memberCount} members")

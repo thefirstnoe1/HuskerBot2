@@ -15,9 +15,10 @@ import org.springframework.web.client.RestTemplate
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
@@ -372,6 +373,58 @@ class WeatherService(
             }
         } catch (e: Exception) {
             log.error("Error getting NWS forecast for $latitude, $longitude", e)
+            null
+        }
+    }
+
+    fun getSunriseSunsetTimes(latitude: Double, longitude: Double, date: LocalDate, zone: ZoneId = ZoneId.of("America/Chicago")): Pair<ZonedDateTime, ZonedDateTime>? {
+        return try {
+            // Use sunrisesunset.io API which returns local times and timezone metadata
+            val headers = HttpHeaders()
+            headers.set("User-Agent", userAgent)
+            val entity = HttpEntity<String>(headers)
+
+            val url = "https://api.sunrisesunset.io/json?lat=${latitude}&lng=${longitude}&date=${date}"
+            val response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                JsonNode::class.java
+            )
+
+            val body = response.body ?: return null
+            val results = body.get("results") ?: return null
+
+            val sunriseStr = results.get("sunrise")?.asText()
+            val sunsetStr = results.get("sunset")?.asText()
+            if (sunriseStr.isNullOrBlank() || sunsetStr.isNullOrBlank()) return null
+
+            // Prefer API-provided timezone if available, otherwise fallback to provided zone
+            val tzId = results.get("timezone")?.asText()
+            val useZone = try {
+                if (!tzId.isNullOrBlank()) ZoneId.of(tzId) else zone
+            } catch (e: Exception) { zone }
+
+            fun parseLocalTimeFlexible(text: String): java.time.LocalTime? {
+                val patterns = listOf("h:mm:ss a", "h:mm a")
+                for (p in patterns) {
+                    try {
+                        val fmt = java.time.format.DateTimeFormatter.ofPattern(p)
+                        return java.time.LocalTime.parse(text, fmt)
+                    } catch (_: Exception) { }
+                }
+                return null
+            }
+
+            val sunriseLocal = parseLocalTimeFlexible(sunriseStr) ?: return null
+            val sunsetLocal = parseLocalTimeFlexible(sunsetStr) ?: return null
+
+            val sunriseZdt = ZonedDateTime.of(date, sunriseLocal, useZone)
+            val sunsetZdt = ZonedDateTime.of(date, sunsetLocal, useZone)
+
+            Pair(sunriseZdt, sunsetZdt)
+        } catch (e: Exception) {
+            log.error("Error computing sunrise/sunset times via sunrisesunset.io for $latitude,$longitude on $date", e)
             null
         }
     }
