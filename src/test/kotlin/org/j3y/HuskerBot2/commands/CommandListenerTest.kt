@@ -49,7 +49,7 @@ class CommandListenerTest {
 
         listener.onSlashCommandInteraction(event)
 
-        Mockito.verify(foo).execute(event)
+        Mockito.verify(foo, Mockito.timeout(1000)).execute(event)
         Mockito.verify(bar, Mockito.never()).execute(event)
     }
 
@@ -84,7 +84,7 @@ class CommandListenerTest {
 
         listener.onButtonInteraction(event)
 
-        Mockito.verify(bar).buttonEvent(event)
+        Mockito.verify(bar, Mockito.timeout(1000)).buttonEvent(event)
     }
 
     @Test
@@ -117,7 +117,7 @@ class CommandListenerTest {
 
         listener.onUserContextInteraction(event)
 
-        Mockito.verify(userCtx).execute(event)
+        Mockito.verify(userCtx, Mockito.timeout(1000)).execute(event)
     }
 
     @Test
@@ -152,7 +152,7 @@ class CommandListenerTest {
 
         listener.onMessageContextInteraction(event)
 
-        Mockito.verify(msgCtx).execute(event)
+        Mockito.verify(msgCtx, Mockito.timeout(1000)).execute(event)
     }
 
     @Test
