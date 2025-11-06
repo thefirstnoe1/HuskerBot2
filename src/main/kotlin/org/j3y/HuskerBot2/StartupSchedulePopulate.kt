@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct
 import org.j3y.HuskerBot2.automation.backup.DatabaseBackupService
 import org.j3y.HuskerBot2.model.ScheduleEntity
 import org.j3y.HuskerBot2.repository.ScheduleRepo
+import org.j3y.HuskerBot2.scheduler.SunriseSunsetScheduler
 import org.j3y.HuskerBot2.service.HuskersDotComService
 import org.j3y.HuskerBot2.util.SeasonResolver
 import org.slf4j.LoggerFactory
@@ -20,9 +21,11 @@ class StartupSchedulePopulate {
 
     @Autowired private lateinit var scheduleRepo: ScheduleRepo
     @Autowired lateinit var huskersDotComService: HuskersDotComService
+    @Autowired lateinit var a: SunriseSunsetScheduler
 
     @PostConstruct
     fun init() {
+        //a.scheduleDailySunMessages()
         val year: Int = SeasonResolver.currentCfbSeason()
         val games = huskersDotComService.getSchedule(year).path("data") as ArrayNode
         games.forEach { game ->

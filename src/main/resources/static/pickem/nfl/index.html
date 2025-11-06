@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NFL Pick'em — Charts</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    body { padding-top: 2rem; }
+    .chart-card { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="d-flex align-items-center mb-3">
+      <h1 class="me-auto">NFL Pick'em — Charts</h1>
+      <a class="btn btn-outline-secondary me-2" href="/">Back to Home</a>
+      <div class="input-group" style="width: 260px;">
+        <span class="input-group-text">Season</span>
+        <input id="seasonInput" type="number" class="form-control" />
+        <button id="reloadBtn" class="btn btn-primary">Load</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 col-lg-6 chart-card">
+        <div class="card">
+          <div class="card-header">Weekly Picks Summary</div>
+          <div class="card-body">
+            <canvas id="weeklyChart" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6 chart-card">
+        <div class="card">
+          <div class="card-header">Top Users (by Points)</div>
+          <div class="card-body">
+            <canvas id="usersChart" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+      Tip: Click a week bar to drill down into user results for that week.
+    </div>
+  </div>
+
+  <!-- Drilldown Modal -->
+  <div class="modal fade" id="weekModal" tabindex="-1" aria-labelledby="weekModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="weekModalLabel">Week Results</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="weekEmpty" class="alert alert-warning d-none">No picks found for this week.</div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle" id="weekTable">
+              <thead>
+                <tr>
+                  <th style="width:60px">Rank</th>
+                  <th>User</th>
+                  <th class="text-end">Correct</th>
+                  <th class="text-end">Total</th>
+                  <th class="text-end">Points</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Adapt Chart.js colors for Bootstrap dark mode
+    (function() {
+      const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (window.Chart) {
+        const bodyColor = cssVar('--bs-body-color') || '#e9ecef';
+        const borderColor = 'rgba(255,255,255,.15)';
+        Chart.defaults.color = bodyColor;
+        Chart.defaults.borderColor = borderColor;
+        Chart.defaults.plugins = Chart.defaults.plugins || {};
+        Chart.defaults.plugins.legend = Chart.defaults.plugins.legend || {};
+        Chart.defaults.plugins.legend.labels = Chart.defaults.plugins.legend.labels || {};
+        Chart.defaults.plugins.legend.labels.color = bodyColor;
+      }
+    })();
+
+    const seasonInput = document.getElementById('seasonInput');
+    const reloadBtn = document.getElementById('reloadBtn');
+
+    async function fetchJson(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to load ' + url);
+      return res.json();
+    }
+
+    function currentYearAdjustedForNfl() {
+      const d = new Date();
+      // NFL season runs Sep–Feb; shift by 8 months so Jan/Feb count to prior season year
+      d.setMonth(d.getMonth() - 8);
+      return d.getFullYear();
+    }
+
+    let weeklyChart, usersChart;
+
+    function makeWeeklyChart(data) {
+      const labels = data.map(x => 'W' + x.week);
+      const totals = data.map(x => x.total);
+      const correct = data.map(x => x.correct);
+
+      const ctx = document.getElementById('weeklyChart');
+      if (weeklyChart) weeklyChart.destroy();
+      weeklyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Total Picks', data: totals, backgroundColor: 'rgba(13,110,253,.5)' },
+            { label: 'Correct Picks', data: correct, backgroundColor: 'rgba(25,135,84,.6)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { precision: 0 } } },
+          onClick: async (evt, elements) => {
+            const points = weeklyChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+            if (!points.length) return;
+            const first = points[0];
+            const weekLabel = weeklyChart.data.labels[first.index];
+            const week = parseInt(String(weekLabel).replace('W', ''), 10);
+            const season = parseInt(seasonInput.value, 10);
+            await showWeekModal(season, week);
+          }
+        }
+      });
+    }
+
+    function makeUsersChart(data) {
+      const top = data.slice(0, 15);
+      const labels = top.map(x => x.displayName || x.userId);
+      const points = top.map(x => x.points);
+      const correct = top.map(x => x.correct);
+
+      const ctx = document.getElementById('usersChart');
+      if (usersChart) usersChart.destroy();
+      usersChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Points', data: points, backgroundColor: 'rgba(25,135,84,.7)' },
+            { label: 'Correct Picks', data: correct, backgroundColor: 'rgba(13,110,253,.3)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          indexAxis: 'y',
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+
+    async function fetchWeekUsers(season, week) {
+      const q = `?week=${encodeURIComponent(week)}${season ? `&season=${encodeURIComponent(season)}` : ''}`;
+      return fetchJson('/api/pickem/nfl/weekUsers' + q);
+    }
+
+    function renderWeekTable(season, week, data) {
+      const modalTitle = document.getElementById('weekModalLabel');
+      modalTitle.textContent = `Season ${season} — Week ${week} Results`;
+      const tbody = document.querySelector('#weekTable tbody');
+      tbody.innerHTML = '';
+
+      const empty = document.getElementById('weekEmpty');
+      if (!data || data.length === 0) {
+        empty.classList.remove('d-none');
+        return;
+      }
+      empty.classList.add('d-none');
+
+      data.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        const rank = idx + 1;
+        tr.innerHTML = `
+          <td>${rank}</td>
+          <td>${row.displayName || row.userId}</td>
+          <td class="text-end">${row.correct}</td>
+          <td class="text-end">${row.total}</td>
+          <td class="text-end">${row.points}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function showWeekModal(season, week) {
+      try {
+        const data = await fetchWeekUsers(season, week);
+        renderWeekTable(season, week, data);
+        const modalEl = document.getElementById('weekModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      } catch (e) {
+        console.error(e);
+        alert('Failed to load week details.');
+      }
+    }
+
+    async function load(season) {
+      try {
+        const [weekly, users] = await Promise.all([
+          fetchJson('/api/pickem/nfl/weekly' + (season ? ('?season=' + season) : '')),
+          fetchJson('/api/pickem/nfl/users' + (season ? ('?season=' + season) : '')),
+        ]);
+        makeWeeklyChart(weekly);
+        makeUsersChart(users);
+      } catch (e) {
+        console.error(e);
+        alert('Failed to load charts. See console for details.');
+      }
+    }
+
+    function init() {
+      const yr = currentYearAdjustedForNfl();
+      seasonInput.value = yr;
+      load(yr);
+    }
+
+    reloadBtn.addEventListener('click', () => load(parseInt(seasonInput.value, 10)));
+
+    init();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -19,7 +19,7 @@ class ScheduledTaskEntity(
     var id: ScheduledTaskId = ScheduledTaskId(),
 
     @Lob
-    @Column(name = "task_data")
+    @Column(name = "task_data", columnDefinition = "BLOB")
     var taskData: ByteArray? = null,
 
     @Column(name = "execution_time", nullable = false)
