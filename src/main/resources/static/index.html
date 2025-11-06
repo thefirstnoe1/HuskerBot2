@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HuskerBot — Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { padding-top: 4rem; }
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .card-link { text-decoration: none; color: inherit; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1 class="display-5 fw-bold">HuskerBot — Dashboard</h1>
+      <p class="text-secondary mb-0">Choose an app to view charts and stats</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="/bets/index.html" class="card-link">
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">Husker Bets</h5>
+              <p class="card-text text-secondary flex-grow-1">Charts and summaries of Husker Bets by week and user.</p>
+              <div>
+                <span class="btn btn-primary">Open Husker Bets</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="/pickem/nfl/index.html" class="card-link">
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">NFL Pick'em</h5>
+              <p class="card-text text-secondary flex-grow-1">Season and weekly pick'em charts, with user drilldowns.</p>
+              <div>
+                <span class="btn btn-primary">Open NFL Pick'em</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <a href="/emoji/index.html" class="card-link">
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">Emoji Usage</h5>
+              <p class="card-text text-secondary flex-grow-1">See which custom emojis are used most across the server.</p>
+              <div>
+                <span class="btn btn-primary">Open Emoji Usage</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

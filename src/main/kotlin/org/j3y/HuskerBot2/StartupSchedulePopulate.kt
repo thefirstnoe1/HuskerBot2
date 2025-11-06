@@ -25,7 +25,7 @@ class StartupSchedulePopulate {
 
     @PostConstruct
     fun init() {
-        a.scheduleDailySunMessages()
+        //a.scheduleDailySunMessages()
         val year: Int = SeasonResolver.currentCfbSeason()
         val games = huskersDotComService.getSchedule(year).path("data") as ArrayNode
         games.forEach { game ->
