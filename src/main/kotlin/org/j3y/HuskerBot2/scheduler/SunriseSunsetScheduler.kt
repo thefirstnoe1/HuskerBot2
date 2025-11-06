@@ -45,7 +45,7 @@ class SunriseSunsetScheduler(
             return
         }
 
-        val (sunrise, sunset) = Pair(ZonedDateTime.now().plusSeconds(5), ZonedDateTime.now().plusSeconds(20)) //times
+        val (sunrise, sunset) = times //Pair(ZonedDateTime.now().plusSeconds(5), ZonedDateTime.now().plusSeconds(20)) //times
         val now = ZonedDateTime.now(zone).toInstant()
         val channelIdLong = generalChannelId.toLongOrNull()
         if (channelIdLong == null) {
