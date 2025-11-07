@@ -144,12 +144,18 @@
     }
 
     function makeUsersChart(data) {
-      const top = data.slice(0, 15);
-      const labels = top.map(x => x.displayName || x.userId);
-      const points = top.map(x => x.points);
-      const correct = top.map(x => x.correct);
+      // Include all users (no top-15 slice) and size canvas to fit all rows
+      const sorted = [...data];
+      const rows = sorted.length;
+      const labels = sorted.map(x => x.displayName || x.userId);
+      const points = sorted.map(x => x.points);
+      const correct = sorted.map(x => x.correct);
 
       const ctx = document.getElementById('usersChart');
+      // Dynamically size canvas height to fit all rows (approx 28px per row)
+      const desiredHeight = Math.max(200, rows * 28);
+      ctx.style.height = desiredHeight + 'px';
+
       if (usersChart) usersChart.destroy();
       usersChart = new Chart(ctx, {
         type: 'bar',
@@ -162,6 +168,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }

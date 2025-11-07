@@ -138,12 +138,16 @@
 
     function makeUsersChart(data) {
       const sorted = [...data].sort((a,b) => (b.correctWinner||0) - (a.correctWinner||0));
-      const top = sorted.slice(0, 15); // top 15 users
-      const labels = top.map(x => x.displayName || x.userTag || x.userId);
-      const winners = top.map(x => x.correctWinner);
-      const totals = top.map(x => x.total);
+      const rows = sorted.length;
+      const labels = sorted.map(x => x.displayName || x.userTag || x.userId);
+      const winners = sorted.map(x => x.correctWinner);
+      const totals = sorted.map(x => x.total);
 
       const ctx = document.getElementById('usersChart');
+      // Dynamically size canvas height to fit all rows (approx 28px per row)
+      const desiredHeight = Math.max(200, rows * 28);
+      ctx.style.height = desiredHeight + 'px';
+
       if (usersChart) usersChart.destroy();
       usersChart = new Chart(ctx, {
         type: 'bar',
@@ -156,6 +160,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
@@ -168,12 +173,15 @@
         ...x,
         totalPoints: (x.correctSpread||0)*2 + (x.correctPoints||0)*2 + (x.correctWinner||0)*1
       })).sort((a,b) => b.totalPoints - a.totalPoints);
-      const top = sorted.slice(0, 15);
-      const labels = top.map(x => x.displayName || x.userTag || x.userId);
-      const totals = top.map(x => x.total);
-      const points = top.map(x => x.totalPoints);
+      const rows = sorted.length;
+      const labels = sorted.map(x => x.displayName || x.userTag || x.userId);
+      const totals = sorted.map(x => x.total);
+      const points = sorted.map(x => x.totalPoints);
 
       const ctx = document.getElementById('pointsChart');
+      const desiredHeight = Math.max(200, rows * 28);
+      ctx.style.height = desiredHeight + 'px';
+
       if (pointsChart) pointsChart.destroy();
       pointsChart = new Chart(ctx, {
         type: 'bar',
@@ -186,6 +194,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
@@ -195,12 +204,15 @@
 
     function makeOverUnderChart(data) {
       const sorted = [...data].sort((a,b) => (b.correctPoints||0) - (a.correctPoints||0));
-      const top = sorted.slice(0, 15);
-      const labels = top.map(x => x.displayName || x.userTag || x.userId);
-      const overUnder = top.map(x => x.correctPoints);
-      const totals = top.map(x => x.total);
+      const rows = sorted.length;
+      const labels = sorted.map(x => x.displayName || x.userTag || x.userId);
+      const overUnder = sorted.map(x => x.correctPoints);
+      const totals = sorted.map(x => x.total);
 
       const ctx = document.getElementById('overUnderChart');
+      const desiredHeight = Math.max(200, rows * 28);
+      ctx.style.height = desiredHeight + 'px';
+
       if (overUnderChart) overUnderChart.destroy();
       overUnderChart = new Chart(ctx, {
         type: 'bar',
@@ -213,6 +225,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
@@ -222,12 +235,15 @@
 
     function makeSpreadChart(data) {
       const sorted = [...data].sort((a,b) => (b.correctSpread||0) - (a.correctSpread||0));
-      const top = sorted.slice(0, 15);
-      const labels = top.map(x => x.displayName || x.userTag || x.userId);
-      const spread = top.map(x => x.correctSpread);
-      const totals = top.map(x => x.total);
+      const rows = sorted.length;
+      const labels = sorted.map(x => x.displayName || x.userTag || x.userId);
+      const spread = sorted.map(x => x.correctSpread);
+      const totals = sorted.map(x => x.total);
 
       const ctx = document.getElementById('spreadChart');
+      const desiredHeight = Math.max(200, rows * 28);
+      ctx.style.height = desiredHeight + 'px';
+
       if (spreadChart) spreadChart.destroy();
       spreadChart = new Chart(ctx, {
         type: 'bar',
@@ -240,6 +256,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
