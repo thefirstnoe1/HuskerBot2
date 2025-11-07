@@ -28,15 +28,42 @@
         <div class="card">
           <div class="card-header">Weekly Summary</div>
           <div class="card-body">
-            <canvas id="weeklyChart" height="140"></canvas>
+            <canvas id="weeklyChart"></canvas>
           </div>
         </div>
       </div>
-      <div class="col-12 col-lg-6 chart-card">
+        <div class="col-12 col-lg-6 chart-card">
+            <div class="card">
+                <div class="card-header">Top Users (by Total Points)</div>
+                <div class="card-body">
+                    <canvas id="pointsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-4 chart-card">
+            <div class="card">
+                <div class="card-header">Top Users (by Correct Winners)</div>
+                <div class="card-body">
+                    <canvas id="usersChart"></canvas>
+                </div>
+            </div>
+        </div>
+      <div class="col-12 col-lg-4 chart-card">
         <div class="card">
-          <div class="card-header">Top Users (by Correct Winners)</div>
+          <div class="card-header">Top Users (by Over/Under)</div>
           <div class="card-body">
-            <canvas id="usersChart" height="140"></canvas>
+            <canvas id="overUnderChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4 chart-card">
+        <div class="card">
+          <div class="card-header">Top Users (by Spread)</div>
+          <div class="card-body">
+            <canvas id="spreadChart"></canvas>
           </div>
         </div>
       </div>
@@ -79,7 +106,7 @@
       return d.getFullYear();
     }
 
-    let weeklyChart, usersChart;
+    let weeklyChart, usersChart, pointsChart, overUnderChart, spreadChart;
 
     function makeWeeklyChart(data) {
       const labels = data.map(x => 'W' + x.week);
@@ -110,7 +137,8 @@
     }
 
     function makeUsersChart(data) {
-      const top = data.slice(0, 15); // top 15 users
+      const sorted = [...data].sort((a,b) => (b.correctWinner||0) - (a.correctWinner||0));
+      const top = sorted.slice(0, 15); // top 15 users
       const labels = top.map(x => x.displayName || x.userTag || x.userId);
       const winners = top.map(x => x.correctWinner);
       const totals = top.map(x => x.total);
@@ -135,6 +163,90 @@
       });
     }
 
+    function makePointsChart(data) {
+      const sorted = [...data].map(x => ({
+        ...x,
+        totalPoints: (x.correctSpread||0)*2 + (x.correctPoints||0)*2 + (x.correctWinner||0)*1
+      })).sort((a,b) => b.totalPoints - a.totalPoints);
+      const top = sorted.slice(0, 15);
+      const labels = top.map(x => x.displayName || x.userTag || x.userId);
+      const totals = top.map(x => x.total);
+      const points = top.map(x => x.totalPoints);
+
+      const ctx = document.getElementById('pointsChart');
+      if (pointsChart) pointsChart.destroy();
+      pointsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Total Points', data: points, backgroundColor: 'rgba(108,117,125,.7)' },
+            { label: 'Total Bets', data: totals, backgroundColor: 'rgba(13,110,253,.25)' },
+          ]
+        },
+        options: {
+          responsive: true,
+          indexAxis: 'y',
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+
+    function makeOverUnderChart(data) {
+      const sorted = [...data].sort((a,b) => (b.correctPoints||0) - (a.correctPoints||0));
+      const top = sorted.slice(0, 15);
+      const labels = top.map(x => x.displayName || x.userTag || x.userId);
+      const overUnder = top.map(x => x.correctPoints);
+      const totals = top.map(x => x.total);
+
+      const ctx = document.getElementById('overUnderChart');
+      if (overUnderChart) overUnderChart.destroy();
+      overUnderChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Correct Over/Under', data: overUnder, backgroundColor: 'rgba(255,193,7,.7)' },
+            { label: 'Total Bets', data: totals, backgroundColor: 'rgba(13,110,253,.25)' },
+          ]
+        },
+        options: {
+          responsive: true,
+          indexAxis: 'y',
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+
+    function makeSpreadChart(data) {
+      const sorted = [...data].sort((a,b) => (b.correctSpread||0) - (a.correctSpread||0));
+      const top = sorted.slice(0, 15);
+      const labels = top.map(x => x.displayName || x.userTag || x.userId);
+      const spread = top.map(x => x.correctSpread);
+      const totals = top.map(x => x.total);
+
+      const ctx = document.getElementById('spreadChart');
+      if (spreadChart) spreadChart.destroy();
+      spreadChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Correct Spread', data: spread, backgroundColor: 'rgba(220,53,69,.7)' },
+            { label: 'Total Bets', data: totals, backgroundColor: 'rgba(13,110,253,.25)' },
+          ]
+        },
+        options: {
+          responsive: true,
+          indexAxis: 'y',
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+
     async function load(season) {
       try {
         const [weekly, users] = await Promise.all([
@@ -143,6 +255,9 @@
         ]);
         makeWeeklyChart(weekly);
         makeUsersChart(users);
+        makePointsChart(users);
+        makeOverUnderChart(users);
+        makeSpreadChart(users);
       } catch (e) {
         console.error(e);
         alert('Failed to load charts. See console for details.');
