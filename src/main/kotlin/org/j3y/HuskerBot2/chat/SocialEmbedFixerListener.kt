@@ -43,12 +43,12 @@ class SocialEmbedFixerListener : ListenerAdapter() {
                     // TikTok -> vxtiktok
                     lower.contains("://tiktok.com/") || lower.contains("://www.tiktok.com/") ->
                         url.replace(Regex("^(https?://)(?:www\\.)?tiktok\\.com", RegexOption.IGNORE_CASE),
-                            "$1vxtiktok.com")
+                            "$1tnktok.com")
 
                     // Instagram -> kkinstagram
                     lower.contains("://instagram.com/") || lower.contains("://www.instagram.com/") ->
                         url.replace(Regex("^(https?://)(?:www\\.)?instagram\\.com", RegexOption.IGNORE_CASE),
-                            "$1vxinstagram.com")
+                            "$1eeinstagram.com")
 
                     // Bluesky -> fxbsky
                     lower.contains("://bsky.app/") || lower.contains("://www.bsky.app/") ->
