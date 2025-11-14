@@ -22,6 +22,9 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
+    // Spring Retry support
+    implementation("org.springframework.retry:spring-retry")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
 	// Playwright for headless browser fetching
 	implementation("com.microsoft.playwright:playwright:1.47.0")
 	// Jsoup for HTML parsing/stripping
