@@ -159,7 +159,8 @@ class GoogleGeminiServiceTest {
             )
         ).thenThrow(RuntimeException("boom"))
 
-        val result = svc.generateText("prompt")
-        assertEquals("Error calling Gemini: boom", result)
+        assertThrows(RuntimeException::class.java) {
+            svc.generateText("prompt")
+        }
     }
 }
