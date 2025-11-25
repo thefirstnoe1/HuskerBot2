@@ -42,7 +42,25 @@ class WeatherService(
     
     @Cacheable("coordinates", unless = "#result == null")
     fun getCoordinates(location: String): GeocodingResult? {
+        // Check for hardcoded coordinates first to avoid API calls for common locations
+        val hardcoded = getHardcodedCoordinates(location)
+        if (hardcoded != null) {
+            log.info("Using hardcoded coordinates for $location")
+            return hardcoded
+        }
+        
         return searchNominatim(location)
+    }
+    
+    private fun getHardcodedCoordinates(location: String): GeocodingResult? {
+        // Normalize location string for comparison
+        val normalized = location.trim().lowercase().replace(Regex("\\s+"), " ")
+        
+        return when (normalized) {
+            "lincoln, ne", "lincoln, nebraska" -> GeocodingResult(40.818996724, -96.70333052)
+            "omaha, ne", "omaha, nebraska" -> GeocodingResult(41.2565, -95.9345)
+            else -> null
+        }
     }
     
     @Cacheable("weather-forecast", unless = "#result == null") 
@@ -320,6 +338,7 @@ class WeatherService(
             val encodedLocation = URLEncoder.encode(location, StandardCharsets.UTF_8)
             val url = "$nominatimBaseUrl/search?q=$encodedLocation&format=json&limit=1"
             
+            log.info("Geocoding location via Nominatim: $location")
             val response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -339,7 +358,7 @@ class WeatherService(
                 null
             }
         } catch (e: Exception) {
-            log.error("Error geocoding location: $location", e)
+            log.error("Error geocoding location via Nominatim: $location - ${e.message}", e)
             null
         }
     }
