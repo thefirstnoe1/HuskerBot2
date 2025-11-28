@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import org.j3y.HuskerBot2.commands.betting.BetShow
 import org.j3y.HuskerBot2.repository.BetRepo
@@ -24,6 +25,8 @@ class BetProcessing {
     @Autowired
     private lateinit var betShow: BetShow
     private final val log = LoggerFactory.getLogger(BetProcessing::class.java)
+    
+    private final val FINAL_WEEK = 14;
 
     @Autowired @Lazy lateinit var jda: JDA
     @Value("\${discord.channels.husker-bets}")lateinit var huskerBetsChannelId: String
@@ -99,10 +102,16 @@ class BetProcessing {
         }
         betRepo.saveAll(bets)
 
-        val nextGameWeek =
-            scheduleRepo.findFirstByDateTimeAfterOrderByDateTimeAsc(gameEntity.dateTime)?.week ?: (week + 1)
+        if (week >= FINAL_WEEK) {
+            postWeekLeaderboard(week)
+            postSeasonLeaderboard()
+            postWinnerEmbed()
+        } else {
+            val nextGameWeek =
+                scheduleRepo.findFirstByDateTimeAfterOrderByDateTimeAsc(gameEntity.dateTime)?.week ?: (week + 1)
 
-        postWeeklyBets(nextGameWeek)
+            postWeeklyBets(nextGameWeek)
+        }
     }
 
     final fun postWeeklyBets(week: Int = SeasonResolver.currentCfbWeek()) {
@@ -124,7 +133,7 @@ class BetProcessing {
         val prevWeek = scheduleRepo.findFirstByDateTimeBeforeOrderByDateTimeDesc(gameEntity.dateTime)?.week ?: (week - 1)
         postWeekLeaderboard(prevWeek)
         postSeasonLeaderboard()
-
+        
         val lines = data.path("lines").path(0)
         val overUnder = lines.path("overUnder").asDouble(0.0)
         val formattedSpread = lines.path("formattedSpread").asText()
@@ -203,6 +212,68 @@ class BetProcessing {
             title = "🏆 Husker Betting Leaderboard — $season Season",
             guild = channel.guild
         )
+        channel.sendMessageEmbeds(embed).queue()
+    }
+
+    /**
+     * Posts a simple congratulations message for the season winner(s).
+     *
+     * This is only called once the final week has been processed.
+     */
+    private fun postWinnerEmbed() {
+        val season = SeasonResolver.currentCfbSeason()
+        val channel = jda.getTextChannelById(huskerBetsChannelId) ?: return log.warn("No channel found for id $huskerBetsChannelId.")
+
+        val bets = betRepo.findBySeason(season)
+        if (bets.isEmpty()) {
+            channel.sendMessage("No bets found for the ${season} season, so no winner could be determined.").queue()
+            return
+        }
+
+        val totals = leaderboardService.computeTotals(bets)
+        if (totals.isEmpty()) {
+            channel.sendMessage("No scored bets found for the ${season} season, so no winner could be determined.").queue()
+            return
+        }
+
+        // Highest point total across all users
+        val topScore = totals.first().second.points
+        val winners = totals.filter { it.second.points == topScore }
+
+        // Build a human-friendly winners list, preferring Discord display names when possible
+        val names = winners.map { (userId, total) ->
+            val displayName = try {
+                channel.guild.retrieveMember(UserSnowflake.fromId(userId)).complete()?.effectiveName
+            } catch (_: Exception) {
+                null
+            }
+
+            displayName ?: total.userTag.ifBlank { userId.toString() }
+        }
+
+        val winnerLine = when (names.size) {
+            1 -> names.first()
+            2 -> names.joinToString(" and ")
+            else -> names.dropLast(1).joinToString(", ") + ", and " + names.last()
+        }
+
+        val title = "f3c6 Husker Bets ${season} Season Champion${if (names.size > 1) "s" else ""}!"
+        val description = buildString {
+            append("Congratulations to ")
+            append(winnerLine)
+            append(" for finishing the season on top with ")
+            append(topScore)
+            append(" point")
+            if (topScore != 1) append("s")
+            append("!")
+        }
+
+        val embed = EmbedBuilder()
+            .setTitle(title)
+            .setDescription(description)
+            .setColor(java.awt.Color(200, 16, 46))
+            .build()
+
         channel.sendMessageEmbeds(embed).queue()
     }
 
