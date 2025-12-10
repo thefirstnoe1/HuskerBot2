@@ -21,7 +21,7 @@ open class GoogleGeminiService(
     @Value("\${gemini.base-url:https://generativelanguage.googleapis.com}") private val baseUrl: String,
     @Value("\${gemini.model:models/gemini-2.5-flash-lite}") private val model: String,
     @Value("\${gemini.api-key:}") private val apiKey: String,
-    @Value("\${gemini.image-model:models/gemini-2.0-flash-preview-image-generation}") private val imageModel: String = "models/gemini-2.5-flash-image-preview",
+    @Value("\${gemini.image-model:models/gemini-2.5-flash-image}") private val imageModel: String = "models/gemini-2.5-flash-image",
 ) {
     private val log = LoggerFactory.getLogger(GoogleGeminiService::class.java)
     private val client = RestTemplate()
@@ -104,7 +104,7 @@ open class GoogleGeminiService(
                 )
             ),
             "generationConfig" to mapOf(
-                "responseModalities" to listOf("TEXT", "IMAGE")
+                "responseModalities" to listOf("IMAGE")
             )
         )
 

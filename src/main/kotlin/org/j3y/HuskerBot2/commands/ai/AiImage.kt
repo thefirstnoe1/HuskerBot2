@@ -52,7 +52,7 @@ class AiImage : SlashCommand() {
                     EmbedBuilder()
                     .addField("Prompt", prompt, false)
                     .addField("Requested by", commandEvent.user.asMention, false)
-                    .setFooter("This AI slop is brought to you by Gemini 2.0 flash")
+                    .setFooter("This AI slop is brought to you by Gemini")
                     .build())
                     .addFiles(upload)
                     .complete().jumpUrl
